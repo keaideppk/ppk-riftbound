@@ -35,6 +35,7 @@
   #touch{top:calc(50% + var(--stage-pixel-height) / 2 + 73px)}
 }
 #field-message{position:absolute;inset:auto 0 40px;display:flex;flex-direction:column;align-items:center;gap:9px}
+#grapple-key{position:absolute;right:0;bottom:calc(100% + 8px);color:#d5edab;border-color:#a3ba86}
 #field-message #prompt,#field-message #caption{position:static;transform:none}
 #field-message:has(#caption[hidden]){bottom:144px}
 @media (orientation:landscape){
@@ -89,6 +90,7 @@
     <div id="touch" hidden aria-label="触屏操作">
       <div><button data-key="left" aria-label="左">◀</button><button data-key="right" aria-label="右">▶</button></div>
       <div><button data-key="heal" aria-label="修复">✚</button><button data-key="use" aria-label="交互">◇</button><button data-key="dash" aria-label="冲刺">»</button><button data-key="attack" aria-label="攻击">⚔</button><button data-key="jump" aria-label="跳跃">↑</button></div>
+      <button id="grapple-key" data-key="grapple" aria-label="荆棘钩索" title="荆棘钩索" hidden>↗</button>
     </div>
 </main>
 <script>'use strict';
@@ -116,7 +118,7 @@ const THEMES = {
 };
 const ABILITIES = {
   dash: { name:'裂相冲刺', key:'Shift / K', note:'空中也能冲刺。回到锈轨长廊，越过断桥。', color:'#e7a779' },
-  wall: { name:'荆棘攀跃', key:'贴墙时跳跃', note:'靠住墙面，按跳跃向另一侧蹬出。去钟冠阶廊攀上高门。', color:'#c6e58f' },
+  grapple: { name:'荆棘钩索', key:'V', note:'勾住亮起的锚环，可直接拉上平台。前方没有可用锚环时，可勾向普通敌人。', color:'#c6e58f' },
   double: { name:'回声跃', key:'空中再按跳跃', note:'在空中获得第二次跳跃。回到孢雾竖井，登上高门。', color:'#d2aee2' }
 };
 const WEAPONS = {
@@ -127,7 +129,7 @@ const WEAPONS = {
   bow:{name:'线圈弩',color:'#92e5e0',room:'泄压泵房',ability:'dash',note:'消耗 1 格能量，远射并轻微辅助瞄准。',cost:1,moves:[
     {duration:.43,from:.14,damage:2,stop:.022,speed:915,life:.57,radius:4}
   ]},
-  spear:{name:'荆棘枪',color:'#cbe39e',room:'覆根礼拜堂',ability:'wall',note:'长距离突刺，命中回复能量。',moves:[
+  spear:{name:'荆棘枪',color:'#cbe39e',room:'覆根礼拜堂',ability:'grapple',note:'长距离突刺，命中回复能量。',moves:[
     {duration:.50,from:.14,to:.23,reach:165,back:3,top:51,height:38,damage:2,stop:.051,energy:1,push:102}
   ]},
   hammer:{name:'回声锤',color:'#f2a8ca',room:'回声培养巢',ability:'double',note:'蓄力横扫，击退附近敌人并打散近身弹体。',moves:[
@@ -157,11 +159,12 @@ const E = (type,x,y=FLOOR) => ({type,x,y});
 const I = (kind,id,x,y=FLOOR,text='') => ({kind,id,x,y,text});
 const C = (id,x,y) => I('cache',id,x,y);
 const D = (kind,x,y=FLOOR) => ({kind,x,y});
+const A = (x,y,landingX) => ({x,y:y-58,landingX,landingY:y});
 const P = (x,y=FLOOR,need='') => ({x,y,need});
 const GATE = (x,y=FLOOR,need='') => ({...P(x,y,need),manual:true});
 const EDGE = (side,y=FLOOR) => ({side,y});
 const R = (title,theme,map,w,solids,items=[],mobs=[],extra={}) => ({
-  title,theme,map,w,solids,items,mobs,links:[],arrivals:[],hazards:[],decor:[],...extra
+  title,theme,map,w,solids,items,mobs,links:[],arrivals:[],hazards:[],decor:[],anchors:[],...extra
 });
 const ROOMS = {
   hub:R('界门站','hub',[0,0],1440,[GROUND(1440),LEDGE(555,474,258)],
@@ -171,7 +174,7 @@ const ROOMS = {
     LEDGE(1386,485,224),LEDGE(1660,388,206),LEDGE(1917,288,296),LEDGE(2260,382,181),LEDGE(2490,486,157)],
     [I('lore','rail-gap',812,FLOOR,'渡桥坍塌。备用相位装置在上方的泵房。'),C('rail-crane',2070,288)],
     [E('crawler',340),E('sentry',1510),E('crawler',2180),E('mote',2290,351)],
-    {hazards:[SOLID(862,690,360,40)],decor:[D('gantry',1860),D('gantry',2405)]}),
+    {hazards:[SOLID(862,690,360,40)],decor:[D('gantry',1860),D('gantry',2405)],anchors:[A(1889,288,2050)]}),
   pump:R('泄压泵房','iron',[1,-1],2260,[GROUND(2260),LEDGE(345,485,166),LEDGE(546,392,212),
     LEDGE(1090,482,195),LEDGE(1320,386,205),LEDGE(1560,289,241),LEDGE(1830,451,184)],
     [B(190),I('ability','dash',658,392),I('weapon','bow',865),C('pump-tanks',1666,289),
@@ -184,7 +187,8 @@ const ROOMS = {
     [B(1182),I('lore','forge-log',1440,FLOOR,'监工执行最后一条指令：关闭铁界。那条指令来自界门站。'),
       C('foundry-cage',2215,280)],
     [E('sentry',370),E('crawler',703),E('sentry',1049,478),E('crawler',1520),E('sentry',2560),E('mote',2360,333)],
-    {hazards:[SOLID(1850,577,234,15)],decor:[D('gantry',2130),D('boiler',2670)]}),
+    {hazards:[SOLID(1850,577,234,15)],decor:[D('gantry',2130),D('boiler',2670)],
+      anchors:[A(662,319,752),A(1853,380,1960),A(2080,280,2207)]}),
   cistern:R('余温蓄槽','iron',[2,-1],2050,[GROUND(2050),LEDGE(481,470,143),LEDGE(731,389,135),LEDGE(970,473,145),
     LEDGE(1171,426,167),LEDGE(1390,330,174),LEDGE(1620,233,218)],
     [I('shard','iron-shard',1730,233),C('cistern-valve',795,389),
@@ -199,17 +203,19 @@ const ROOMS = {
     {decor:[D('window',1755),D('tree',2170),D('window',2550)]}),
   chapel:R('覆根礼拜堂','green',[-1,-1],2230,[GROUND(2230),LEDGE(337,486,172),LEDGE(545,389,210),
     LEDGE(1090,481,180),LEDGE(1320,386,174),LEDGE(1544,285,219),LEDGE(1840,438,195)],
-    [I('ability','wall',651,389),I('weapon','spear',1018),C('chapel-loft',1638,285),
+    [I('ability','grapple',651,389),I('weapon','spear',1018),C('chapel-loft',1638,285),
       I('lore','pilgrim-log',1877,438,'绕过祭坛后方的拱廊，就到了钟冠阶廊。')],
     [E('thorn',374),E('bat',794,461),E('bat',1002,414),E('thorn',1470),E('bat',1710,256)],
-    {decor:[D('window',1235),D('window',1615),D('tree',1985)]}),
-  canopy:R('钟冠阶廊','green',[-2,0],2780,[GROUND(2780),SOLID(554,251,42,216),SOLID(803,251,42,216),
-    LEDGE(650,235,99),LEDGE(968,470,164),LEDGE(376,469,145),LEDGE(273,365,172),
+    {decor:[D('window',1235),D('window',1615),D('tree',1985)],
+      anchors:[A(1065,481,1155),A(1292,386,1390),A(1518,285,1638)]}),
+  canopy:R('钟冠阶廊','green',[-2,0],2780,[GROUND(2780),LEDGE(710,428,164),LEDGE(492,235,170),
+    LEDGE(376,469,145),LEDGE(273,365,172),
     LEDGE(1530,478,208),LEDGE(1784,377,189),LEDGE(2023,277,232),LEDGE(2290,375,175),LEDGE(2510,473,168)],
-    [B(1165),I('lore','bell-route',672,FLOOR,'来回蹬住两侧的塔壁，钟冠上方的门通向守爵。'),
+    [B(1165),I('lore','bell-route',934,FLOOR,'依次勾住阶廊上方的吊环，钟冠顶端的门通向守爵。'),
       C('canopy-crown',2140,277)],
-    [E('bat',1060,350),E('thorn',1610),E('bat',252,396),E('thorn',2040),E('bat',2350,346)],
-    {hazards:[SOLID(1738,579,191,13)],decor:[D('window',707),D('tree',2110),D('window',2460)]}),
+    [E('bat',1330,350),E('thorn',1610),E('bat',252,396),E('thorn',2040),E('bat',2350,346)],
+    {hazards:[SOLID(1738,579,191,13)],decor:[D('window',707),D('tree',2110),D('window',2460)],
+      anchors:[A(684,428,766),A(900,428,800),A(686,235,634)]}),
   bell:R('失钟楼','green',[-2,-1],2120,[GROUND(2120),LEDGE(305,487,140),LEDGE(485,399,155),LEDGE(673,312,155),
     LEDGE(871,229,194),LEDGE(1108,323,177),LEDGE(1334,422,162),LEDGE(1530,327,180),LEDGE(1750,231,230)],
     [I('shard','green-shard',1870,231),C('bell-roof',955,229),I('lore','bell-log',508,399,'钟落下之后，风继续唱完了那段旋律。')],
@@ -260,14 +266,14 @@ connect('hub','rail',EDGE('right'),EDGE('left'));
 connect('rail','pump',P(622,412),P(94));
 connect('rail','pump',P(792,493,'dash'),P(2146,FLOOR,'dash'));
 connect('rail','foundry',EDGE('right'),EDGE('left'));
-connect('foundry','cistern',P(787,319,'wall'),P(140));
+connect('foundry','cistern',P(787,319,'grapple'),P(140));
 connect('foundry','forge',EDGE('right'),EDGE('left'));
 connect('hub','woods',{...EDGE('left'),need:'iron'},EDGE('right'));
 connect('woods','chapel',P(543,402),P(120));
-connect('chapel','canopy',P(2120,FLOOR,'wall'),P(1634,478,'wall'));
+connect('chapel','canopy',P(2120,FLOOR,'grapple'),P(1634,478,'grapple'));
 connect('woods','canopy',EDGE('left'),EDGE('right'));
 connect('canopy','bell',P(357,365,'double'),P(120));
-connect('canopy','keep',P(703,235,'wall'),P(1117));
+connect('canopy','keep',P(575,235,'grapple'),P(1117));
 connect('hub','spores',GATE(943,FLOOR,'green'),GATE(358));
 connect('spores','nest',P(763,391),P(132));
 connect('nest','sump',P(2100,FLOOR,'double'),P(167,492,'double'));
@@ -288,7 +294,7 @@ const hitBox = p => ({x:p.x-p.w/2,y:p.y-p.h,w:p.w,h:p.h});
 const overlaps = (a,b) => a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
 const objective = state => !state.seals.has('iron') ?
   (state.abilities.has('dash') ? '穿过锈轨断桥，前往焚心熔炉' : '向东进入钢铁矿区，找到泵房里的装置') :
-  !state.seals.has('green') ? (state.abilities.has('wall') ? '攀上钟冠阶廊，前往荆冠王座' : '从界门站向西，寻找覆根礼拜堂') :
+  !state.seals.has('green') ? (state.abilities.has('grapple') ? '用钩索登上钟冠阶廊，前往荆冠王座' : '从界门站向西，寻找覆根礼拜堂') :
   !state.seals.has('spore') ? (state.abilities.has('double') ? '登上孢雾竖井，前往共鸣母巢' : '进入遗落温室，寻找回声培养巢') :
   '返回界门站，接通中央界门';
 
@@ -532,6 +538,35 @@ function beaconArt(c,x,y,t){
   line(c,t.rim,2,[x-23,y-2],[x-9,y-11],[x-5,y-42],[x+7,y-42],[x+9,y-20]);
   poly(c,'#b2e8d3',[[x+1,y-61],[x+8,y-51],[x+1,y-43],[x-7,y-51]]);
 }
+function drawAnchor(c,anchor,active,unlocked,time){
+  const {x,y}=anchor,color=active?'#e3ffb8':unlocked?'#a0b785':'#788376';
+  c.save();c.translate(x,y);
+  if(active)glow(c,0,0,57,'#c6e58f64','#c6e58f00');
+  line(c,'#263733',7,[0,-37],[0,-12]);
+  line(c,'#929e70',1.6,[1,-34],[1,-12]);
+  plate(c,0,-34,25,7,0,BRASS);
+  const ring=[[-13,0],[-7,-11],[7,-11],[13,0],[7,11],[-7,11],[-13,0]];
+  line(c,'#21322c',8,...ring);line(c,color,3,...ring);
+  line(c,'#e5edce',1,[-12,-.5],[-6,-10],[6,-10]);
+  if(active){
+    const s=17+Math.sin(time*6)*2.5;
+    line(c,color,1.5,[-s,4],[-s-4,0],[-s,-4]);
+    line(c,color,1.5,[s,4],[s+4,0],[s,-4]);
+  }
+  c.restore();
+}
+function drawGrappleLine(c,p,time){
+  const {anchor,enemy}=p.grapple;
+  const x=p.x+p.dir*16,y=p.y-40,target=anchor||enemy;
+  const tx=target.x,ty=anchor?anchor.y:enemy.y-enemy.h*.52;
+  line(c,'#223b32',5,[x,y],[tx,ty]);
+  line(c,'#c6e58f',2.6,[x,y],[tx,ty]);
+  for(let i=0;i<4;i++){
+    const along=(time*2.4+i*.25)%1;
+    const kx=lerp(x,tx,along),ky=lerp(y,ty,along);
+    line(c,'#edf9c5',1.3,[kx-3,ky+3],[kx+3,ky-3]);
+  }
+}
 function marker(c,item,t,time){
   const {x,y,kind}=item;
   if(kind==='beacon'){beaconArt(c,x,y,t);return;}
@@ -718,6 +753,8 @@ function renderScene(g,c,title=false){
     for(const item of room.items){
       if(!g.collected(item))marker(c,item,t,time);
     }
+    const p=g.player,target=g.grappleTarget(),unlocked=g.state.abilities.has('grapple');
+    for(const anchor of room.anchors)drawAnchor(c,anchor,target?.anchor===anchor||p.grapple?.anchor===anchor,unlocked,time);
     for(const p of g.projectiles){
       glow(c,p.x,p.y,27,p.color+'99',p.color+'00');oval(c,p.color,p.x,p.y,p.r,p.r*.67);
       line(c,p.color+'86',2,[p.x,p.y],[p.x-p.vx*.046,p.y-p.vy*.046]);
@@ -736,7 +773,11 @@ function renderScene(g,c,title=false){
       c.globalAlpha=1;
     }
     for(const e of g.enemies)if(e.hp>0)drawEnemy(c,e,time);
-    const p=g.player;
+    if(target?.enemy){
+      const e=target.enemy,y=e.y-e.h-11;
+      line(c,'#d7f8aabf',1.5,[e.x-6,y-4],[e.x,y+2],[e.x+6,y-4]);
+    }
+    if(p.grapple)drawGrappleLine(c,p,time);
     if(p.dashTime>0){
       c.globalAlpha=.42;
       poly(c,t.rim,[[p.x-p.dir*117,p.y-31],[p.x,p.y-53],[p.x+p.dir*10,p.y-36],[p.x,p.y-22]]);
@@ -864,7 +905,7 @@ function heroShadow(c,x,y,rx){
 }
 function drawHero(c,p,time,title=false,mirror=false,equipped='blade'){
   const speed=clamp(Math.abs(p.vx||0)/320,0,1),stride=Math.sin(time*15)*speed, lift=Math.cos(time*15)*speed;
-  const airborne=!p.grounded,dash=Boolean(p.dashTime), atk=p.attack;
+  const airborne=!p.grounded,dash=Boolean(p.dashTime),grapple=p.grapple,atk=p.attack;
   const weapon=atk?.weapon||equipped;
   let reach=0,swing=0,aim=weapon==='blade'?.45:weapon==='spear'?-1.16:weapon==='bow'?.58:-.88;
   if(atk){
@@ -904,8 +945,9 @@ function drawHero(c,p,time,title=false,mirror=false,equipped='blade'){
   c.beginPath();c.moveTo(-9,-46);c.quadraticCurveTo(-25,-40,tail-3,-28);
   c.moveTo(-10,-42);c.quadraticCurveTo(-22,-34,tail+3,hem-7);
   c.strokeStyle=cloth[0];c.lineWidth=.9;c.stroke();
-  const shoulder=[6,-42], hand=[11+reach*(weapon==='spear'?18:12),-32+(weapon==='bow'?-7:0)+Math.sin(aim)*4];
-  const elbow=[13+reach*4,-31+Math.sin(aim)*3];
+  const shoulder=[6,-42];
+  const hand=grapple?[15,-42]:[11+reach*(weapon==='spear'?18:12),-32+(weapon==='bow'?-7:0)+Math.sin(aim)*4];
+  const elbow=grapple?[10,-34]:[13+reach*4,-31+Math.sin(aim)*3];
   linkLimb(c,[-8,-43],[-12,-30],7,STEEL);
   plate(c,-3,-29,22,11,.07,STEEL);
   plate(c,-2,-40,28,20,-.11,mirror?STEEL:SILVER);
@@ -916,7 +958,10 @@ function drawHero(c,p,time,title=false,mirror=false,equipped='blade'){
   plate(c,-10,-26,6,9,.11,BRASS,false);
   linkLimb(c,shoulder,elbow,8,STEEL);linkLimb(c,elbow,hand,7,SILVER);
   plate(c,6,-43,12,10,.23,mirror?STEEL:BRASS);
-  weaponArt(c,weapon,hand[0],hand[1],aim,weapon==='spear'?.9:1,atk&&atk.t<atk.move.from?reach:0);
+  if(grapple){
+    weaponArt(c,weapon,-11,-31,2.15,weapon==='spear'?.9:1);
+    plate(c,hand[0]+2,hand[1]-2,10,7,-.27,BRASS);
+  }else weaponArt(c,weapon,hand[0],hand[1],aim,weapon==='spear'?.9:1,atk&&atk.t<atk.move.from?reach:0);
   plate(c,hand[0],hand[1],7,6,.28,STEEL,false);
   const visor=mirror?'#ffb5b0':'#a8f5da';
   facet(c,[[-14,-52],[-15,-60],[-9,-68],[0,-72],[9,-69],[16,-61],[17,-55],[9,-48],[-3,-47],[-12,-50]],
@@ -1059,7 +1104,7 @@ const cacheIds=Object.values(ROOMS).flatMap(room=>room.items.filter(i=>i.kind===
 const validatedSet=(list,valid)=>new Set(Array.isArray(list)?list.filter(id=>typeof id==='string'&&valid.includes(id)):[]);
 function stateFrom(raw) {
   const state={
-    abilities:validatedSet(raw?.abilities,Object.keys(ABILITIES)),
+    abilities:validatedSet(raw?.abilities,Object.keys(ABILITIES).concat('wall')),
     defeated:validatedSet(raw?.defeated,Object.keys(BOSSES)),
     shards:validatedSet(raw?.shards,shardIds),
     caches:validatedSet(raw?.caches,cacheIds),
@@ -1071,6 +1116,7 @@ function stateFrom(raw) {
     elapsed:clamp(Number.isFinite(raw?.elapsed)?raw.elapsed:0,0,999999),
     seals:new Set()
   };
+  if(state.abilities.delete('wall'))state.abilities.add('grapple');
   for(const boss of state.defeated) if(BOSSES[boss].seal)state.seals.add(BOSSES[boss].seal);
   state.weapons.add('blade');
   // Saves from before weapon pickups had already completed these rooms.
@@ -1088,7 +1134,7 @@ function settingsFrom(raw) {
 }
 const maxHealth = g => 5+g.state.shards.size;
 const newPlayer = () => ({x:325,y:FLOOR,w:28,h:55,vx:0,vy:0,dir:1,grounded:true,health:5,energy:0,
-  coyote:0,buffer:0,wallDir:0,wallLock:0,airJump:false,airDash:false,dashTime:0,dashCooldown:0,
+  coyote:0,buffer:0,grapple:null,grappleCooldown:0,airJump:false,airDash:false,dashTime:0,dashCooldown:0,
   invulnerable:0,arrivalGrace:0,knock:0,attack:null,comboQueued:false,walkT:0});
 
 // ====== Synthesized sound effects and ambience ======
@@ -1115,6 +1161,7 @@ function makeAudio(g){
     jump:()=>tone(164,361,.15,.12,'triangle'),
     double:()=>{tone(270,465,.19,.12,'triangle');tone(442,786,.2,.07,'sine',.035);},
     dash:()=>{sweep(.22,.62,2200,370);tone(144,51,.21,.16,'triangle');},
+    grapple:()=>{sweep(.18,.38,820,2900);tone(490,690,.19,.095,'triangle',.035);},
     slash:()=>sweep(.19,.51,570,3400),
     spear:()=>{sweep(.18,.51,1280,5150);tone(342,189,.17,.11,'triangle');},
     hammer:()=>{sweep(.29,.48,754,235);tone(141,47,.30,.25,'triangle');},
@@ -1189,12 +1236,11 @@ function moveBody(body, dx, dy, room) {
   }
   return {wall,landed,ceiling};
 }
-function wallSide(p,r,prefer){
-  for(const sign of [prefer||1,-(prefer||1)]){
-    const b=hitBox(p);b.x+=sign*3;b.y+=5;b.h-=10;
-    if(r.solids.some(a=>overlaps(a,b)))return sign;
-  }
-  return 0;
+function grapplePathClear(room,p,x,y){
+  const half=p.w/2;
+  // Sweep the player's feet against solids expanded to cover the full body.
+  return room.solids.every(b=>segmentEntry(p.x,p.y,x-p.x,y-p.y,
+    {x:b.x-half+.01,y:b.y+.01,w:b.w+p.w-.02,h:b.h+p.h-.02})===Infinity);
 }
 function keepInside(e,r) {e.x=clamp(e.x,e.w*.5,r.w-e.w*.5);}
 function walkEnemy(e,dx,dt,r){
@@ -1260,8 +1306,8 @@ class Game {
     }
     const p=this.player;
     Object.assign(p,{x,y,vx:0,vy:0,grounded:true,attack:null,comboQueued:false,coyote:.10,
-      buffer:0,dashTime:0,dashCooldown:0,wallDir:0,airJump:false,airDash:false,
-      wallLock:0,knock:0,walkT:0,arrivalGrace:1.15});
+      buffer:0,dashTime:0,dashCooldown:0,grapple:null,grappleCooldown:0,airJump:false,airDash:false,
+      knock:0,walkT:0,arrivalGrace:1.15});
     p.dir=x>r.w*.74?-1:1;
     this.camera=clamp(x-W*.45,0,r.w-W);this.projectiles.length=0;this.bolts.length=0;this.threats.length=0;
     this.pool.push(...this.particles);this.particles.length=0;
@@ -1365,7 +1411,7 @@ class Game {
     const p=this.player;
     if(!force&&(p.invulnerable>0||p.arrivalGrace>0||p.dashTime>0))return;
     p.health--;p.invulnerable=this.settings.difficulty==='story'?1.7:1.03;
-    this.shake=11;this.stop=.07;p.attack=null;p.comboQueued=false;p.dashTime=0;p.knock=.21;
+    this.shake=11;this.stop=.07;p.attack=null;p.comboQueued=false;p.dashTime=0;p.grapple=null;p.knock=.21;
     p.vx=p.x<source?-270:270;p.vy=-330;
     this.audio.play('hurt');this.burst(p.x,p.y-29,'#ef9c7f',16,true);
     if(p.health<=0){
@@ -1476,28 +1522,66 @@ class Game {
     if(boss.seal)this.state.seals.add(boss.seal);
     this.save();
   }
-  updatePlayer(dt){
+  grappleTarget(direction=this.player.dir){
     const p=this.player,r=this.room;
-    const input=Number(this.keys.has('right'))-Number(this.keys.has('left'));
-    p.arrivalGrace=Math.max(0,p.arrivalGrace-dt);
-    p.dry=Math.max(0,(p.dry||0)-dt);
-    if(this.pressed.has('weapon'))this.cycleWeapon();
-    for(const [slot,id] of weaponOrder.entries())if(this.pressed.has('weapon'+slot))this.selectWeapon(id);
-    p.invulnerable=Math.max(0,p.invulnerable-dt);p.dashCooldown=Math.max(0,p.dashCooldown-dt);
-    p.wallLock=Math.max(0,p.wallLock-dt);p.knock=Math.max(0,p.knock-dt);
+    if(p.grapple||p.knock||p.grappleCooldown||!this.state.abilities.has('grapple'))return null;
+    let best=null,nearest=340;
+    for(const anchor of r.anchors){
+      if(p.y<=anchor.landingY+22)continue;
+      const distance=Math.hypot(anchor.x-p.x,anchor.y-(p.y-39));
+      if(distance>=nearest||!grapplePathClear(r,p,anchor.x,anchor.y+32))continue;
+      best={anchor};nearest=distance;
+    }
+    if(best)return best;
+    nearest=268;
+    for(const enemy of this.enemies){
+      if(enemy.boss||!enemy.hp)continue;
+      const dx=enemy.x-p.x,dy=enemy.y-p.y,distance=Math.hypot(dx,dy);
+      if(dx*direction<78||Math.abs(dy)>115||distance>=nearest)continue;
+      const gap=(enemy.w+p.w)/2+22;
+      if(!grapplePathClear(r,p,enemy.x-direction*gap,enemy.y-5))continue;
+      best={enemy,direction,gap};nearest=distance;
+    }
+    return best;
+  }
+  startGrapple(direction){
+    const p=this.player,target=this.grappleTarget(direction);
+    if(!target)return;
+    p.grapple=target;p.attack=null;p.comboQueued=false;p.dashTime=0;
+    p.buffer=0;p.coyote=0;p.grounded=false;
+    p.grappleCooldown=target.enemy?.52:0;
+    this.audio.play('grapple');
+    const point=target.anchor||target.enemy;
+    this.burst(point.x,target.anchor?point.y:point.y-point.h/2,ABILITIES.grapple.color,12,true);
+  }
+  moveGrapple(dt){
+    const p=this.player,{anchor,enemy,direction,gap,landing}=p.grapple;
+    const x=anchor?(landing?anchor.landingX:anchor.x):enemy.x-direction*gap;
+    const y=anchor?(landing?anchor.landingY:anchor.y+32):enemy.y-5;
+    if((enemy&&(!enemy.hp||(enemy.x-p.x)*direction<=gap-10))||!grapplePathClear(this.room,p,x,y)){
+      p.grapple=null;p.vx=0;p.vy=0;return;
+    }
+    const dx=x-p.x,dy=y-p.y,distance=Math.hypot(dx,dy);
+    const speed=anchor?(landing?680:1100):1180;
+    if(Math.abs(dx)>1)p.dir=Math.sign(dx);
+    if(distance>speed*dt){
+      p.vx=dx/distance*speed;p.vy=dy/distance*speed;
+      p.x+=p.vx*dt;p.y+=p.vy*dt;return;
+    }
+    p.x=x;p.y=y;p.vx=0;p.vy=0;
+    if(anchor&&!landing){p.grapple={anchor,landing:true};return;}
+    p.grapple=null;
+    if(anchor){p.grounded=true;this.audio.play('land');}
+    else p.dir=direction;
+  }
+  movePlayer(dt,input){
+    const p=this.player,r=this.room;
     if(p.grounded){p.coyote=.105;p.airJump=false;p.airDash=false;}else p.coyote=Math.max(0,p.coyote-dt);
     p.buffer=this.pressed.has('jump')?.13:Math.max(0,p.buffer-dt);
-    const wall=wallSide(p,r,input||p.dir);
-    const canWall=this.state.abilities.has('wall');
     if(!p.knock&&p.buffer>0&&!p.dashTime){
-      const wallJump=canWall&&wall&&!p.grounded&&!p.wallLock;
-      const doubleJump=!p.coyote&&!wallJump&&!p.airJump&&this.state.abilities.has('double');
-      if(p.coyote||wallJump||doubleJump){
-        p.vy=doubleJump?-658:wallJump?-702:-655;p.buffer=0;p.coyote=0;p.grounded=false;
-        if(wallJump){
-          p.vx=-wall*420;p.wallLock=.13;p.dir=-wall;p.airDash=false;
-          this.burst(p.x+wall*15,p.y-19,'#b9cf90',9);
-        }
+      const doubleJump=!p.coyote&&!p.airJump&&this.state.abilities.has('double');
+      if(p.coyote||doubleJump){
+        p.vy=doubleJump?-658:-655;p.buffer=0;p.coyote=0;p.grounded=false;
         if(doubleJump){p.airJump=true;this.burst(p.x,p.y,'#c7b0e2',13,true);}
         this.audio.play(doubleJump?'double':'jump');
       }
@@ -1511,7 +1595,7 @@ class Game {
       p.energy-=3;p.health++;this.audio.play('heal');this.burst(p.x,p.y-34,'#a6ebcc',17,true);
     }
     if(!p.dashTime&&!p.knock){
-      if(input&&!p.wallLock&&!p.attack)p.dir=input;
+      if(input&&!p.attack)p.dir=input;
       if(this.pressed.has('attack')){
         if(!p.attack)this.startAttack();
         else if(p.attack.weapon==='blade'&&this.state.weapon==='blade')p.comboQueued=true;
@@ -1522,16 +1606,13 @@ class Game {
     if(p.dashTime>0){
       p.dashTime=Math.max(0,p.dashTime-dt);p.vx=p.dir*1070;p.vy=0;
     }else{
-      if(!p.knock&&!p.wallLock){
+      if(!p.knock){
         const speed=p.attack?.weapon==='hammer'?126:p.attack?210:320;
         const rate=input?(p.grounded?25:15):p.grounded?26:6;
         p.vx=lerp(p.vx,input*speed,1-Math.exp(-rate*dt));
       }
       const grav=p.vy<0&&!this.keys.has('jump')?2180:1520;
       p.vy=Math.min(815,p.vy+grav*dt);
-      if(canWall&&wall&&input===wall&&!p.grounded&&p.vy>135){
-        p.vy=135;p.wallDir=wall;
-      }else p.wallDir=0;
     }
     const oldVy=p.vy, m=moveBody(p,p.vx*dt,p.vy*dt+.05,r);
     if(m.wall){p.vx=0;p.dashTime=0;}
@@ -1540,6 +1621,19 @@ class Game {
     if(p.grounded&&!onGround&&oldVy>235){
       this.audio.play('land');this.burst(p.x,p.y-1,THEMES[r.theme].rim,7);
     }
+  }
+  updatePlayer(dt){
+    const p=this.player,r=this.room;
+    const input=Number(this.keys.has('right'))-Number(this.keys.has('left'));
+    p.arrivalGrace=Math.max(0,p.arrivalGrace-dt);
+    p.dry=Math.max(0,(p.dry||0)-dt);
+    if(this.pressed.has('weapon'))this.cycleWeapon();
+    for(const [slot,id] of weaponOrder.entries())if(this.pressed.has('weapon'+slot))this.selectWeapon(id);
+    p.invulnerable=Math.max(0,p.invulnerable-dt);p.dashCooldown=Math.max(0,p.dashCooldown-dt);
+    p.grappleCooldown=Math.max(0,p.grappleCooldown-dt);p.knock=Math.max(0,p.knock-dt);
+    if(this.pressed.has('grapple')&&!p.grapple)this.startGrapple(input||p.dir);
+    if(p.grapple)this.moveGrapple(dt);
+    else this.movePlayer(dt,input);
     if(p.grounded&&Math.abs(p.vx)>115){
       p.walkT+=dt;
       if(p.walkT>.145){p.walkT=0;this.burst(p.x-p.dir*8,p.y-1,THEMES[r.theme].line,2);}
@@ -1565,7 +1659,7 @@ class Game {
         Math.abs(p.y-l.y)<15&&this.canPass(l));
       if(door){this.follow(door);return true;}
     }
-    this.near=this.interaction();
+    this.near=p.grapple?null:this.interaction();
     if(!activeBoss&&this.pressed.has('use')&&this.near){
       if(this.use(this.near))return true;
       this.near=this.interaction();
@@ -1797,7 +1891,7 @@ function showControls(g,back){
 }
 const bindings=[
   ['移动',['A / D','← / →']],['跳跃',['Space / Z']],['攻击',['J / X']],['冲刺',['Shift / K']],
-  ['交互',['E / ↑']],['修复',['Q / C']],['地图',['M / Tab']],['暂停',['Esc']],['切换武器',['1–4 / F']]
+  ['钩索',['V']],['交互',['E / ↑']],['修复',['Q / C']],['地图',['M / Tab']],['暂停',['Esc']],['切换武器',['1–4 / F']]
 ];
 function drawPanel(g){
   const panel=el('panel-body');panel.replaceChildren();
@@ -1875,6 +1969,7 @@ const UI={
     [...hearts.children].forEach((h,i)=>h.classList.toggle('empty',i>=p.health));
     hearts.setAttribute('aria-label','生命 '+p.health+' / '+max);
     text('inventory','能量 '+p.energy+'/6　·　界印 '+g.state.seals.size+'/3');
+    el('grapple-key').hidden=!g.state.abilities.has('grapple');
     const weapon=WEAPONS[g.state.weapon],belt=el('weapon-belt');
     for(const slot of belt.children){
       const id=slot.dataset.weapon,owned=g.state.weapons.has(id);
@@ -1914,7 +2009,7 @@ const keyboard={
   KeyA:'left',ArrowLeft:'left',KeyD:'right',ArrowRight:'right',
   Space:'jump',KeyZ:'jump',KeyW:'jump',KeyJ:'attack',KeyX:'attack',
   ShiftLeft:'dash',ShiftRight:'dash',KeyK:'dash',KeyE:'use',ArrowUp:'use',
-  KeyQ:'heal',KeyC:'heal',KeyM:'map',Tab:'map',Escape:'pause',
+  KeyQ:'heal',KeyC:'heal',KeyV:'grapple',KeyM:'map',Tab:'map',Escape:'pause',
   KeyF:'weapon',Digit1:'weapon0',Digit2:'weapon1',Digit3:'weapon2',Digit4:'weapon3'
 };
 function bind(g){
