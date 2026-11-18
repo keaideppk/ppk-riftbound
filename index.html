@@ -34,6 +34,17 @@
   .armory.touch-armory{left:2%;top:calc(50% + var(--stage-pixel-height) / 2 + 8px);bottom:auto}
   #touch{top:calc(50% + var(--stage-pixel-height) / 2 + 73px)}
 }
+#field-message{position:absolute;inset:auto 0 40px;display:flex;flex-direction:column;align-items:center;gap:9px}
+#field-message #prompt,#field-message #caption{position:static;transform:none}
+#field-message:has(#caption[hidden]){bottom:144px}
+@media (orientation:landscape){
+  #stage.touch #field-message{bottom:max(40px,calc((max(12px,env(safe-area-inset-bottom)) + clamp(42px,7vw,55px) + 6px - (100dvh - var(--stage-pixel-height)) / 2) / var(--scale,1)))}
+  #stage.touch #field-message:has(#caption[hidden]){bottom:174px}
+}
+@media (orientation:portrait){
+  #field-message{bottom:18px;transform:scale(1.45);transform-origin:bottom center}
+  #field-message:has(#caption[hidden]){bottom:128px}
+}
 </style>
 </head>
 <body>
@@ -47,8 +58,10 @@
       <div class="goal"><span id="zone"></span><span id="objective"></span></div>
       <div class="armory"><div id="weapon-belt" role="group" aria-label="切换武器"></div><span id="weapon-label"></span></div>
       <div id="boss-hud" hidden><b id="boss-name"></b><div><i id="boss-hp"></i></div></div>
-      <div id="prompt" hidden><kbd>E</kbd><span></span></div>
-      <div id="caption" hidden><span id="caption-tag"></span><p id="caption-text"></p></div>
+      <div id="field-message">
+        <div id="prompt" hidden><kbd>E</kbd><span></span></div>
+        <div id="caption" hidden><span id="caption-tag"></span><p id="caption-text"></p></div>
+      </div>
       <div id="room-banner" hidden><span></span><strong></strong></div>
     </div>
     <section id="boot" class="screen"><p class="eyebrow">RIFTBOUND</p><h2 id="boot-text">正在唤醒界门</h2><div class="progress"><i id="boot-progress"></i></div></section>
@@ -142,87 +155,134 @@ const LEDGE = (x,y,w) => SOLID(x,y,w,26);
 const B = x => ({ kind:'beacon', x, y:FLOOR });
 const E = (type,x,y=FLOOR) => ({type,x,y});
 const I = (kind,id,x,y=FLOOR,text='') => ({kind,id,x,y,text});
+const C = (id,x,y) => I('cache',id,x,y);
+const D = (kind,x,y=FLOOR) => ({kind,x,y});
 const P = (x,y=FLOOR,need='') => ({x,y,need});
+const GATE = (x,y=FLOOR,need='') => ({...P(x,y,need),manual:true});
 const EDGE = (side,y=FLOOR) => ({side,y});
 const R = (title,theme,map,w,solids,items=[],mobs=[],extra={}) => ({
-  title,theme,map,w,solids,items,mobs,links:[],hazards:[],...extra
+  title,theme,map,w,solids,items,mobs,links:[],arrivals:[],hazards:[],decor:[],...extra
 });
 const ROOMS = {
   hub:R('界门站','hub',[0,0],1440,[GROUND(1440),LEDGE(555,474,258)],
     [B(325),I('lore','station',511,FLOOR,'检修记录 07。东侧铁界的信号仍在。修复界印，再回来接通其余界门。')]),
-  rail:R('锈轨长廊','iron',[1,0],1660,[SOLID(0,FLOOR,862,160),SOLID(1222,FLOOR,438,160),
-    LEDGE(403,485,151),LEDGE(544,412,158),LEDGE(715,493,132)],
-    [I('lore','rail-gap',812,FLOOR,'渡桥坍塌。备用相位装置在上方的泵房。')],
-    [E('crawler',340),E('sentry',1440)],{hazards:[SOLID(862,690,360,40)]}),
-  pump:R('泄压泵房','iron',[1,-1],1280,[GROUND(1280),LEDGE(345,485,166),LEDGE(546,392,212)],
-    [B(190),I('ability','dash',658,392),I('weapon','bow',865)],[E('crawler',453),E('crawler',963)]),
-  foundry:R('悬炉铸造厂','iron',[2,0],1730,[GROUND(1730),LEDGE(291,494,175),LEDGE(489,407,173),
-    LEDGE(685,319,200),LEDGE(959,478,182),LEDGE(1246,457,161)],
-    [B(1182),I('lore','forge-log',1440,FLOOR,'监工执行最后一条指令：关闭铁界。那条指令来自界门站。')],
-    [E('sentry',370),E('crawler',703),E('sentry',1049,478),E('crawler',1520)]),
-  cistern:R('余温蓄槽','iron',[2,-1],1280,[GROUND(1280),LEDGE(481,470,143),LEDGE(731,389,135),LEDGE(970,473,145)],
-    [I('shard','iron-shard',797,389),I('lore','iron-log',1057,FLOOR,'给下一位行者：炉里的灯亮着，说明这里还有人记得我们。')],
-    [E('sentry',451),E('mote',760,330)],{hazards:[SOLID(628,569,169,23)]}),
+  rail:R('锈轨长廊','iron',[1,0],2820,[SOLID(0,FLOOR,862,160),SOLID(1222,FLOOR,1598,160),
+    LEDGE(403,485,151),LEDGE(544,412,158),LEDGE(715,493,132),
+    LEDGE(1386,485,224),LEDGE(1660,388,206),LEDGE(1917,288,296),LEDGE(2260,382,181),LEDGE(2490,486,157)],
+    [I('lore','rail-gap',812,FLOOR,'渡桥坍塌。备用相位装置在上方的泵房。'),C('rail-crane',2070,288)],
+    [E('crawler',340),E('sentry',1510),E('crawler',2180),E('mote',2290,351)],
+    {hazards:[SOLID(862,690,360,40)],decor:[D('gantry',1860),D('gantry',2405)]}),
+  pump:R('泄压泵房','iron',[1,-1],2260,[GROUND(2260),LEDGE(345,485,166),LEDGE(546,392,212),
+    LEDGE(1090,482,195),LEDGE(1320,386,205),LEDGE(1560,289,241),LEDGE(1830,451,184)],
+    [B(190),I('ability','dash',658,392),I('weapon','bow',865),C('pump-tanks',1666,289),
+      I('lore','pump-overlook',1862,451,'穿过东端检修门，就能回到断桥边。')],
+    [E('crawler',453),E('crawler',963),E('sentry',1420),E('mote',1810,340)],
+    {decor:[D('boiler',1070),D('boiler',1650)]}),
+  foundry:R('悬炉铸造厂','iron',[2,0],3080,[GROUND(3080),LEDGE(291,494,175),LEDGE(489,407,173),
+    LEDGE(685,319,200),LEDGE(959,478,182),LEDGE(1246,457,161),
+    LEDGE(1645,480,198),LEDGE(1880,380,181),LEDGE(2108,280,264),LEDGE(2423,377,171),LEDGE(2642,477,181)],
+    [B(1182),I('lore','forge-log',1440,FLOOR,'监工执行最后一条指令：关闭铁界。那条指令来自界门站。'),
+      C('foundry-cage',2215,280)],
+    [E('sentry',370),E('crawler',703),E('sentry',1049,478),E('crawler',1520),E('sentry',2560),E('mote',2360,333)],
+    {hazards:[SOLID(1850,577,234,15)],decor:[D('gantry',2130),D('boiler',2670)]}),
+  cistern:R('余温蓄槽','iron',[2,-1],2050,[GROUND(2050),LEDGE(481,470,143),LEDGE(731,389,135),LEDGE(970,473,145),
+    LEDGE(1171,426,167),LEDGE(1390,330,174),LEDGE(1620,233,218)],
+    [I('shard','iron-shard',1730,233),C('cistern-valve',795,389),
+      I('lore','iron-log',1057,FLOOR,'给下一位行者：炉里的灯亮着，说明这里还有人记得我们。')],
+    [E('sentry',451),E('mote',760,330),E('mote',1510,279)],{hazards:[SOLID(628,569,169,23)],decor:[D('boiler',1460)]}),
   forge:R('焚心熔炉','iron',[3,0],1280,[GROUND(1280),LEDGE(284,460,162),LEDGE(843,460,160)],[],[],{boss:'foreman'}),
-  woods:R('银桦渡口','green',[-1,0],1560,[GROUND(1560),LEDGE(319,481,174),LEDGE(680,493,180),LEDGE(468,402,164)],
-    [B(1360),I('lore','green-log',1000,FLOOR,'每到深夜，钟就会响一次。银桦下的人把那声音当成归途。')],
-    [E('bat',734,402),E('thorn',1054),E('thorn',186)]),
-  chapel:R('覆根礼拜堂','green',[-1,-1],1280,[GROUND(1280),LEDGE(337,486,172),LEDGE(545,389,210)],
-    [I('ability','wall',651,389),I('weapon','spear',1018)],[E('thorn',374),E('bat',794,461),E('bat',1002,414)]),
-  canopy:R('钟冠阶廊','green',[-2,0],1560,[GROUND(1560),SOLID(554,251,42,216),SOLID(803,251,42,216),
-    LEDGE(650,235,99),LEDGE(968,470,164),LEDGE(376,469,145),LEDGE(273,365,172)],
-    [B(1165),I('lore','bell-route',672,FLOOR,'来回蹬住两侧的塔壁，钟冠上方的门通向守爵。')],
-    [E('bat',1060,350),E('thorn',1307),E('bat',252,396)]),
-  bell:R('失钟楼','green',[-2,-1],1280,[GROUND(1280),LEDGE(305,487,140),LEDGE(485,399,155),LEDGE(673,312,155),
-    LEDGE(871,229,194)],[I('shard','green-shard',955,229),I('lore','bell-log',508,399,'钟落下之后，风继续唱完了那段旋律。')],
-    [E('bat',702,378),E('thorn',899)]),
+  woods:R('银桦渡口','green',[-1,0],2840,[GROUND(2840),LEDGE(319,481,174),LEDGE(680,493,180),LEDGE(468,402,164),
+    LEDGE(1550,491,190),LEDGE(1790,392,178),LEDGE(2014,291,231),LEDGE(2290,393,162),LEDGE(2500,490,175)],
+    [B(1360),I('lore','green-log',1000,FLOOR,'每到深夜，钟就会响一次。银桦下的人把那声音当成归途。'),
+      C('woods-crown',2128,291)],
+    [E('bat',734,402),E('thorn',1054),E('thorn',305),E('thorn',1958),E('bat',2254,349)],
+    {decor:[D('window',1755),D('tree',2170),D('window',2550)]}),
+  chapel:R('覆根礼拜堂','green',[-1,-1],2230,[GROUND(2230),LEDGE(337,486,172),LEDGE(545,389,210),
+    LEDGE(1090,481,180),LEDGE(1320,386,174),LEDGE(1544,285,219),LEDGE(1840,438,195)],
+    [I('ability','wall',651,389),I('weapon','spear',1018),C('chapel-loft',1638,285),
+      I('lore','pilgrim-log',1877,438,'绕过祭坛后方的拱廊，就到了钟冠阶廊。')],
+    [E('thorn',374),E('bat',794,461),E('bat',1002,414),E('thorn',1470),E('bat',1710,256)],
+    {decor:[D('window',1235),D('window',1615),D('tree',1985)]}),
+  canopy:R('钟冠阶廊','green',[-2,0],2780,[GROUND(2780),SOLID(554,251,42,216),SOLID(803,251,42,216),
+    LEDGE(650,235,99),LEDGE(968,470,164),LEDGE(376,469,145),LEDGE(273,365,172),
+    LEDGE(1530,478,208),LEDGE(1784,377,189),LEDGE(2023,277,232),LEDGE(2290,375,175),LEDGE(2510,473,168)],
+    [B(1165),I('lore','bell-route',672,FLOOR,'来回蹬住两侧的塔壁，钟冠上方的门通向守爵。'),
+      C('canopy-crown',2140,277)],
+    [E('bat',1060,350),E('thorn',1610),E('bat',252,396),E('thorn',2040),E('bat',2350,346)],
+    {hazards:[SOLID(1738,579,191,13)],decor:[D('window',707),D('tree',2110),D('window',2460)]}),
+  bell:R('失钟楼','green',[-2,-1],2120,[GROUND(2120),LEDGE(305,487,140),LEDGE(485,399,155),LEDGE(673,312,155),
+    LEDGE(871,229,194),LEDGE(1108,323,177),LEDGE(1334,422,162),LEDGE(1530,327,180),LEDGE(1750,231,230)],
+    [I('shard','green-shard',1870,231),C('bell-roof',955,229),I('lore','bell-log',508,399,'钟落下之后，风继续唱完了那段旋律。')],
+    [E('bat',702,378),E('thorn',899),E('bat',1620,274)],{decor:[D('window',1500),D('tree',1815)]}),
   keep:R('荆冠王座','green',[-3,0],1280,[GROUND(1280),LEDGE(338,460,143),LEDGE(817,447,147)],[],[],{boss:'warden'}),
-  spores:R('遗落温室','spore',[0,1],1580,[GROUND(1580),LEDGE(484,484,184),LEDGE(670,391,180),LEDGE(1081,467,186)],
-    [B(182),I('lore','spore-log',527,FLOOR,'墙里的菌丝正在复述昨天的声音。去培养巢找到能保存回声的装置。')],
-    [E('pod',780),E('mote',1050,450),E('pod',1243)]),
-  nest:R('回声培养巢','spore',[0,2],1280,[GROUND(1280),LEDGE(334,487,171),LEDGE(544,388,211)],
-    [I('ability','double',653,388),I('weapon','hammer',986)],[E('mote',560,352),E('pod',912)]),
-  sump:R('孢雾竖井','spore',[1,1],1610,[GROUND(1610),LEDGE(329,499,156),LEDGE(555,369,173),
-    LEDGE(836,215,273),LEDGE(1173,441,145)],
-    [B(182),I('lore','jump-log',703,FLOOR,'有了回声跃，就能从井壁残留的平台抵达上方界门。')],
-    [E('pod',391),E('mote',689,308),E('pod',1290)],{hazards:[SOLID(886,570,209,22)]}),
-  hatch:R('静置标本库','spore',[1,2],1280,[GROUND(1280),LEDGE(347,445,167),LEDGE(600,277,166),LEDGE(896,179,210)],
-    [I('shard','spore-shard',995,179),I('lore','hatch-log',693,277,'标本瓶上写着：可以长出一座花园的最后一枚孢子。')],
-    [E('mote',556,322),E('pod',757),E('mote',900,214)]),
+  spores:R('遗落温室','spore',[0,1],2980,[GROUND(2980),LEDGE(484,484,184),LEDGE(670,391,180),LEDGE(1081,467,186),
+    LEDGE(1400,487,195),LEDGE(1652,389,181),LEDGE(1880,288,258),LEDGE(2203,387,168),LEDGE(2440,484,201)],
+    [B(182),I('lore','spore-log',527,FLOOR,'墙里的菌丝正在复述昨天的声音。去培养巢找到能保存回声的装置。'),
+      C('spores-glass',1980,288)],
+    [E('pod',780),E('mote',1050,450),E('pod',1243),E('pod',2180),E('mote',2300,341)],
+    {hazards:[SOLID(1753,578,274,14)],decor:[D('culture',1680),D('culture',2095),D('culture',2520)]}),
+  nest:R('回声培养巢','spore',[0,2],2200,[GROUND(2200),LEDGE(334,487,171),LEDGE(544,388,211),
+    LEDGE(1105,481,175),LEDGE(1315,384,191),LEDGE(1555,287,203),LEDGE(1798,447,187)],
+    [I('ability','double',653,388),I('weapon','hammer',986),C('nest-canopy',1648,287)],
+    [E('mote',560,352),E('pod',912),E('pod',1490),E('mote',1800,363)],
+    {decor:[D('culture',1360),D('culture',1700)]}),
+  sump:R('孢雾竖井','spore',[1,1],2890,[GROUND(2890),LEDGE(329,499,156),LEDGE(555,369,173),
+    LEDGE(95,492,144),LEDGE(836,215,273),LEDGE(1173,441,145),LEDGE(1460,484,184),LEDGE(1695,380,166),LEDGE(1910,276,227),
+    LEDGE(2190,367,184),LEDGE(2420,455,205)],
+    [B(182),I('lore','jump-log',703,FLOOR,'有了回声跃，就能从井壁残留的平台抵达上方界门。'),
+      C('sump-vent',2030,276)],
+    [E('pod',391),E('mote',689,308),E('pod',1290),E('pod',2090),E('mote',2270,323)],
+    {hazards:[SOLID(886,570,209,22),SOLID(1815,572,211,20)],decor:[D('culture',1655),D('culture',2290)]}),
+  hatch:R('静置标本库','spore',[1,2],2040,[GROUND(2040),LEDGE(347,445,167),LEDGE(600,277,166),LEDGE(896,179,210),
+    LEDGE(1170,271,192),LEDGE(1430,357,202),LEDGE(1700,206,211)],
+    [I('shard','spore-shard',1800,206),C('hatch-shelf',995,179),
+      I('lore','hatch-log',693,277,'标本瓶上写着：可以长出一座花园的最后一枚孢子。')],
+    [E('mote',556,322),E('pod',757),E('mote',900,214),E('mote',1650,266)],{decor:[D('culture',1500)]}),
   heart:R('共鸣母巢','spore',[2,1],1280,[GROUND(1280),LEDGE(288,453,161),LEDGE(865,432,171)],[],[],{boss:'mycel'}),
-  rift:R('断层回廊','rift',[0,-1],1680,[SOLID(0,FLOOR,421,150),SOLID(797,551,333,169),SOLID(1380,FLOOR,300,160),
-    LEDGE(502,516,104),LEDGE(609,441,105),LEDGE(1194,462,91)],
-    [B(166),I('lore','rift-log',966,551,'当三座界域同时断开，界门站救下了你的一段回声。它一直在等待你。')],
-    [E('mote',649,387),E('mote',1120,435),E('sentry',1519)],{hazards:[SOLID(421,690,376,40),SOLID(1130,690,250,40)]}),
+  rift:R('断层回廊','rift',[0,-1],2590,[SOLID(0,FLOOR,421,150),SOLID(797,551,333,169),SOLID(1380,FLOOR,1210,160),
+    LEDGE(502,516,104),LEDGE(609,441,105),LEDGE(1194,462,91),LEDGE(1530,483,175),LEDGE(1760,381,169),
+    LEDGE(1980,278,245),LEDGE(2300,410,163)],
+    [B(166),I('lore','rift-log',966,551,'当三座界域同时断开，界门站救下了你的一段回声。它一直在等待你。'),
+      C('rift-trace',2090,278)],
+    [E('mote',649,387),E('mote',1120,435),E('sentry',1519),E('mote',2075,229)],
+    {hazards:[SOLID(421,690,376,40),SOLID(1130,690,250,40)],decor:[D('window',2110)]}),
   core:R('信号尽头','rift',[0,-2],1280,[GROUND(1280),LEDGE(291,454,153),LEDGE(825,446,151)],[],[],{boss:'mirror'})
 };
 function connect(a,b,from,to) {
   for (const [id, dest, exit, entry] of [[a,b,from,to],[b,a,to,from]]) {
     const x = exit.side ? (exit.side === 'left' ? 0 : ROOMS[id].w) : exit.x;
-    const spawn = entry.side ? (entry.side === 'left' ? 66 : ROOMS[dest].w - 66) : entry.x;
+    const spawn = entry.side ? (entry.side === 'left' ? 92 : ROOMS[dest].w - 92) : entry.x;
     ROOMS[id].links.push({ dest, ...exit, x, spawn, spawnY:entry.y });
+    ROOMS[dest].arrivals.push({x:spawn,y:entry.y});
   }
 }
 connect('hub','rail',EDGE('right'),EDGE('left'));
 connect('rail','pump',P(622,412),P(94));
+connect('rail','pump',P(792,493,'dash'),P(2146,FLOOR,'dash'));
 connect('rail','foundry',EDGE('right'),EDGE('left'));
 connect('foundry','cistern',P(787,319,'wall'),P(140));
 connect('foundry','forge',EDGE('right'),EDGE('left'));
 connect('hub','woods',{...EDGE('left'),need:'iron'},EDGE('right'));
 connect('woods','chapel',P(543,402),P(120));
+connect('chapel','canopy',P(2120,FLOOR,'wall'),P(1634,478,'wall'));
 connect('woods','canopy',EDGE('left'),EDGE('right'));
 connect('canopy','bell',P(357,365,'double'),P(120));
 connect('canopy','keep',P(703,235,'wall'),P(1117));
-connect('hub','spores',P(943,FLOOR,'green'),P(358));
+connect('hub','spores',GATE(943,FLOOR,'green'),GATE(358));
 connect('spores','nest',P(763,391),P(132));
+connect('nest','sump',P(2100,FLOOR,'double'),P(167,492,'double'));
 connect('spores','sump',EDGE('right'),EDGE('left'));
-connect('sump','hatch',P(1260,441,'double'),P(122));
+connect('sump','hatch',P(2518,455,'double'),P(122));
 connect('sump','heart',P(959,215,'double'),P(124));
-connect('hub','rift',P(682,474,'seals'),P(303));
+connect('hub','rift',GATE(682,474,'seals'),GATE(303));
 connect('rift','core',EDGE('right'),EDGE('left'));
 for (const [id,x] of [['forge',1116],['keep',147],['heart',1104]]) {
-  ROOMS[id].links.push({x,y:FLOOR,dest:'hub',spawn:325,spawnY:FLOOR,need:'boss'});
+  ROOMS[id].links.push({...GATE(x,FLOOR,'boss'),dest:'hub',spawn:325,spawnY:FLOOR});
 }
+for(const room of Object.values(ROOMS)){
+  for(const item of room.items)if(item.kind==='beacon')room.arrivals.push({x:item.x,y:item.y});
+}
+const entryPocket=(room,x,y,radius=132)=>room.arrivals.find(a=>Math.abs(x-a.x)<radius&&Math.abs(y-a.y)<104);
 const mapOrder = Object.keys(ROOMS);
 const hitBox = p => ({x:p.x-p.w/2,y:p.y-p.h,w:p.w,h:p.h});
 const overlaps = (a,b) => a.x < b.x+b.w && a.x+a.w > b.x && a.y < b.y+b.h && a.y+a.h > b.y;
@@ -368,7 +428,8 @@ function landmarks(c,room,t,r,w){
 }
 const artCache=new Map();
 function bakeBackground(id) {
-  const room=ROOMS[id], t=THEMES[room.theme], w=1840, r=rng(SEED^hash(id));
+  const room=ROOMS[id], t=THEMES[room.theme], r=rng(SEED^hash(id));
+  const w=Math.max(1840,Math.ceil(W+(room.w-W)*.58+32));
   const sky=canvas(w,H), s=sky.getContext('2d');
   s.fillStyle=gradient(s,0,635,...t.sky);s.fillRect(0,0,w,H);
   const sunX=id==='hub'?1040:700+r()*440;
@@ -474,6 +535,13 @@ function beaconArt(c,x,y,t){
 function marker(c,item,t,time){
   const {x,y,kind}=item;
   if(kind==='beacon'){beaconArt(c,x,y,t);return;}
+  if(kind==='cache'){
+    glow(c,x,y-16,51,'#b0e7bd44','#b0e7bd00');
+    facet(c,[[x-20,y-2],[x-20,y-21],[x-13,y-27],[x+13,y-27],[x+20,y-21],[x+20,y-2]],'#314b44');
+    line(c,'#9fbd95',2,[x-19,y-20],[x+19,y-20]);
+    line(c,'#608378',1,[x-15,y-8],[x+15,y-8]);
+    gem(c,x,y-17,4,4,'#aee3bb');return;
+  }
   if(kind==='lore') {
     poly(c,'#253536',[[x-14,y],[x-9,y-33],[x+13,y-38],[x+15,y]]);
     line(c,t.rim+'95',2,[x-8,y-31],[x+10,y-35],[x+11,y-26]);
@@ -490,6 +558,81 @@ function marker(c,item,t,time){
   }
   poly(c,col,[[x,fy-18],[x+10,fy-1],[x,fy+16],[x-10,fy]]);
   poly(c,'#fff5d8',[[x,fy-14],[x+3,fy],[x,fy+10],[x-4,fy]]);
+}
+function passage(c,x,y,t,open,time){
+  const lit=open?t.rim:'#ab7c65';
+  c.save();c.translate(x,y);
+  poly(c,'#142226ec',[[-49,0],[-45,-74],[-34,-91],[34,-91],[45,-74],[49,0],[32,0],
+    [30,-66],[24,-75],[-24,-75],[-30,-66],[-32,0]]);
+  for(const s of [-1,1]){
+    line(c,t.line,3,[s*42,-5],[s*39,-70],[s*31,-84],[s*8,-84]);
+    line(c,lit,2,[s*34,-29],[s*32,-61],[s*26,-68]);
+  }
+  if(open){
+    line(c,lit+'65',2,[-28,-3],[28,-3]);
+    const rise=Math.sin(time*3)*3;
+    poly(c,lit,[[0,-41+rise],[7,-51+rise],[13,-51+rise],[0,-33+rise],[-13,-51+rise],[-7,-51+rise]]);
+  }else{
+    for(let j=0;j<4;j++)line(c,'#9e6b568f',2,[-25,-14-j*14],[25,-23-j*14]);
+    gem(c,0,-50,4,5,lit);
+  }
+  c.restore();
+}
+function drawLandmark(c,{x,y,kind},t,time){
+  c.save();c.translate(x,y);
+  if(kind==='gantry'){
+    line(c,'#1d2930',18,[-124,0],[-124,-229],[-93,-274],[100,-274],[128,-231],[128,0]);
+    line(c,t.line,2,[-119,0],[-119,-229],[-91,-267],[96,-267],[123,-229],[123,0]);
+    for(let i=-87;i<95;i+=32)line(c,t.line,2,[i,-271],[i+20,-290],[i+31,-272]);
+    line(c,'#334340',4,[-102,-252],[101,-252]);
+    const slider=Math.sin(time*.44+x)*57;
+    plate(c,slider,-252,33,12,.04,IRON);
+    line(c,'#61706a',2,[slider,-247],[slider,-182]);
+    line(c,t.rim,2,[slider-9,-184],[slider-9,-174],[slider,-167],[slider+9,-174],[slider+9,-184]);
+  }else if(kind==='boiler'||kind==='culture'){
+    const tech=kind==='boiler',palette=tech?IRON:SPORE,shine=tech?t.light:t.rim;
+    for(const pair of [[-55,.76],[52,1]]){
+      const [bx,scale]=pair;
+      c.save();c.translate(bx,-9);c.scale(scale,scale);
+      line(c,'#202b2d',13,[-33,-12],[-33,-1],[32,-1],[32,-13]);
+      plate(c,0,-81,80,140,0,palette);
+      c.fillStyle=gradient(c,-137,-28,'#0b1d2a',tech?'#654938':'#584362','#142631');
+      c.beginPath();c.roundRect(-22,-133,44,106,17);c.fill();c.strokeStyle=t.line;c.lineWidth=2;c.stroke();
+      line(c,shine+'88',1.5,[-16,-113],[-16,-53]);
+      if(tech){
+        for(let j=0;j<5;j++)line(c,shine+'b4',1.8,[-12,-101+j*8],[11,-101+j*8]);
+        line(c,palette[2],9,[0,-153],[0,-172],[-31,-172],[-31,-185]);
+      }else{
+        for(let j=0;j<5;j++){
+          const h=-45-((time*15+j*18+x)%78),cx=Math.sin(j*5+x)*12;
+          line(c,shine+'83',2,[cx-2,h],[cx+2,h-2]);
+        }
+      }
+      c.restore();
+    }
+  }else if(kind==='tree'){
+    const dark='#22403b',bark='#65826d';
+    poly(c,dark,[[-56,0],[-29,-90],[-25,-181],[-57,-238],[-46,-241],[-16,-214],
+      [18,-324],[35,-321],[16,-206],[65,-255],[76,-248],[24,-170],[20,-69],[51,0]]);
+    line(c,bark,2,[-46,-2],[-20,-98],[-13,-194],[27,-317]);
+    line(c,bark,2,[14,-175],[68,-249]);
+    for(const [lx,ly,rx] of [[-57,-237,67],[23,-324,76],[72,-249,62]]){
+      oval(c,'#234d409d',lx,ly,rx,rx*.24);
+      oval(c,'#54715b80',lx+8,ly-10,rx*.74,rx*.14);
+    }
+  }else{
+    const glass=t.rim+'59';
+    c.beginPath();c.moveTo(-62,-22);c.lineTo(-62,-203);
+    c.quadraticCurveTo(-59,-250,0,-299);c.quadraticCurveTo(59,-250,62,-203);c.lineTo(62,-22);c.closePath();
+    c.fillStyle=gradient(c,-300,-22,'#20383b',glass,'#142a32');c.fill();
+    c.strokeStyle='#24363a';c.lineWidth=13;c.stroke();c.strokeStyle=t.line;c.lineWidth=2;c.stroke();
+    line(c,'#2a4948',5,[0,-296],[0,-24]);line(c,'#2a4948',4,[-59,-122],[59,-122]);
+    for(const s of [-1,1]){
+      line(c,t.rim+'97',1.8,[s*43,-207],[s*20,-190],[0,-214],[s*40,-162],[s*57,-181]);
+      line(c,t.rim+'78',1.2,[s*51,-102],[s*17,-77],[s*44,-36]);
+    }
+  }
+  c.restore();
 }
 function drawAttack(c,p){
   const a=p.attack;
@@ -551,6 +694,7 @@ function renderScene(g,c,title=false){
   }else if(room.boss){
     device(c,640,592,1.62,t,Boolean(g.state.defeated.has(room.boss)),time,true);
   }
+  if(!title)for(const d of room.decor)if(d.x>cx-165&&d.x<cx+W+165)drawLandmark(c,d,t,time);
   c.drawImage(a.terrain,0,0);
   if(title) {
     glow(c,930,497,139,'#dfb3765a','#dfb37600');
@@ -562,7 +706,11 @@ function renderScene(g,c,title=false){
     }
     for(const p of room.links){
       const open=g.canPass(p);
-      if(!p.side){device(c,p.x,p.y,.43,t,open,time);continue;}
+      if(!p.side){
+        if(p.manual)device(c,p.x,p.y,.43,t,open,time);
+        else passage(c,p.x,p.y,t,open,time);
+        continue;
+      }
       const x=p.x+(p.side==='left'?16:-16);
       line(c,open?t.rim:'#cc8063',3,[x,FLOOR-89],[x,FLOOR-17]);
       if(!open) for(let k=0;k<5;k++)line(c,'#c975627c',1,[x-12,FLOOR-24-k*14],[x+12,FLOOR-31-k*14]);
@@ -907,12 +1055,14 @@ function writeStore(key,data) {
 }
 const beacons=Object.keys(ROOMS).filter(id=>ROOMS[id].items.some(item=>item.kind==='beacon'));
 const shardIds=Object.values(ROOMS).flatMap(room=>room.items.filter(i=>i.kind==='shard').map(i=>i.id));
+const cacheIds=Object.values(ROOMS).flatMap(room=>room.items.filter(i=>i.kind==='cache').map(i=>i.id));
 const validatedSet=(list,valid)=>new Set(Array.isArray(list)?list.filter(id=>typeof id==='string'&&valid.includes(id)):[]);
 function stateFrom(raw) {
   const state={
     abilities:validatedSet(raw?.abilities,Object.keys(ABILITIES)),
     defeated:validatedSet(raw?.defeated,Object.keys(BOSSES)),
     shards:validatedSet(raw?.shards,shardIds),
+    caches:validatedSet(raw?.caches,cacheIds),
     visited:validatedSet(raw?.visited,mapOrder),
     beacons:validatedSet(raw?.beacons,beacons),
     weapons:validatedSet(raw?.weapons,weaponOrder),
@@ -939,7 +1089,7 @@ function settingsFrom(raw) {
 const maxHealth = g => 5+g.state.shards.size;
 const newPlayer = () => ({x:325,y:FLOOR,w:28,h:55,vx:0,vy:0,dir:1,grounded:true,health:5,energy:0,
   coyote:0,buffer:0,wallDir:0,wallLock:0,airJump:false,airDash:false,dashTime:0,dashCooldown:0,
-  invulnerable:0,knock:0,attack:null,comboQueued:false,walkT:0});
+  invulnerable:0,arrivalGrace:0,knock:0,attack:null,comboQueued:false,walkT:0});
 
 // ====== Synthesized sound effects and ambience ======
 function makeAudio(g){
@@ -1075,7 +1225,7 @@ class Game {
   save(){
     const s=this.state;
     this.saveData={checkpoint:s.checkpoint,abilities:[...s.abilities],defeated:[...s.defeated],
-      visited:[...s.visited],shards:[...s.shards],beacons:[...s.beacons],weapons:[...s.weapons],
+      visited:[...s.visited],shards:[...s.shards],caches:[...s.caches],beacons:[...s.beacons],weapons:[...s.weapons],
       weapon:s.weapon,deaths:s.deaths,elapsed:s.elapsed};
     return writeStore(SAVE_KEY,this.saveData);
   }
@@ -1097,7 +1247,8 @@ class Game {
   enter(id,x,y){
     const r=ROOMS[id];
     this.id=id;this.room=r;this.near=null;this.entryX=x;this.entryY=y;this.state.visited.add(id);
-    this.enemies=r.mobs.map(({type,x,y})=>{
+    this.arrivalDoor=r.links.find(l=>!l.side&&!l.manual&&Math.abs(x-l.x)<64&&Math.abs(y-l.y)<56);
+    this.enemies=r.mobs.filter(m=>!entryPocket(r,m.x,m.y)).map(({type,x,y})=>{
       const d=ENEMIES[type];
       return {type,x,y,homeX:x,homeY:y,dir:-1,patrol:-1,w:d.w,h:d.h,hp:d.hp,flash:0,vy:0,
         grounded:!d.flying,mode:'idle',timer:.2+this.random()*.5};
@@ -1109,7 +1260,8 @@ class Game {
     }
     const p=this.player;
     Object.assign(p,{x,y,vx:0,vy:0,grounded:true,attack:null,comboQueued:false,coyote:.10,
-      buffer:0,dashTime:0,dashCooldown:0,wallDir:0,wallLock:0,airJump:false,airDash:false,knock:0,walkT:0});
+      buffer:0,dashTime:0,dashCooldown:0,wallDir:0,airJump:false,airDash:false,
+      wallLock:0,knock:0,walkT:0,arrivalGrace:1.15});
     p.dir=x>r.w*.74?-1:1;
     this.camera=clamp(x-W*.45,0,r.w-W);this.projectiles.length=0;this.bolts.length=0;this.threats.length=0;
     this.pool.push(...this.particles);this.particles.length=0;
@@ -1130,6 +1282,7 @@ class Game {
   collected(item){
     if(item.kind==='ability')return this.state.abilities.has(item.id);
     if(item.kind==='weapon')return this.state.weapons.has(item.id);
+    if(item.kind==='cache')return this.state.caches.has(item.id);
     return item.kind==='shard'&&this.state.shards.has(item.id);
   }
   canPass(link){
@@ -1154,15 +1307,26 @@ class Game {
     const links=this.room.links.map(l=>({...l,kind:l.side?'edge':'portal'}));
     const nearby=[...items,...links].filter(i=>Math.abs(i.x-p.x)<(i.kind==='edge'?72:60)&&Math.abs(i.y-p.y)<49);
     if(!nearby.length) return null;
-    return nearby.reduce((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)<=Math.hypot(b.x-p.x,b.y-p.y)?a:b);
+    const interactable=nearby.filter(i=>i.kind!=='edge'&&(i.kind!=='portal'||i.manual));
+    return (interactable.length?interactable:nearby).reduce((a,b)=>
+      Math.hypot(a.x-p.x,a.y-p.y)<=Math.hypot(b.x-p.x,b.y-p.y)?a:b);
   }
   use(item){
-    if(item.kind==='portal'||item.kind==='edge'){
+    if(item.kind==='portal'&&item.manual){
       if(this.canPass(item)){this.follow(item);return true;}
       this.say('界门',this.lockText(item),2.4);return false;
     }
+    if(item.kind==='portal'||item.kind==='edge')return false;
     if(item.kind==='beacon'){this.checkpoint();return false;}
     if(item.kind==='lore'){this.say('残留记录',item.text);return false;}
+    if(item.kind==='cache'){
+      const p=this.player;
+      if(p.health>=maxHealth(this)&&p.energy>=6){this.say('补给箱','生命与能量已满。',2.2);return false;}
+      const health=Math.min(1,maxHealth(this)-p.health),energy=Math.min(2,6-p.energy);
+      p.health+=health;p.energy+=energy;this.state.caches.add(item.id);
+      const gains=[health?'生命 +'+health:'',energy?'能量 +'+energy:''].filter(Boolean).join('　');
+      this.say('补给箱',gains,2.7);this.audio.play('heal');this.save();return false;
+    }
     if(item.kind==='ability'){
       this.state.abilities.add(item.id);const s=ABILITIES[item.id];
       this.say(s.name+'　'+s.key,s.note,6);
@@ -1199,7 +1363,7 @@ class Game {
   }
   hurt(source,force=false){
     const p=this.player;
-    if(!force&&(p.invulnerable>0||p.dashTime>0))return;
+    if(!force&&(p.invulnerable>0||p.arrivalGrace>0||p.dashTime>0))return;
     p.health--;p.invulnerable=this.settings.difficulty==='story'?1.7:1.03;
     this.shake=11;this.stop=.07;p.attack=null;p.comboQueued=false;p.dashTime=0;p.knock=.21;
     p.vx=p.x<source?-270:270;p.vy=-330;
@@ -1315,6 +1479,7 @@ class Game {
   updatePlayer(dt){
     const p=this.player,r=this.room;
     const input=Number(this.keys.has('right'))-Number(this.keys.has('left'));
+    p.arrivalGrace=Math.max(0,p.arrivalGrace-dt);
     p.dry=Math.max(0,(p.dry||0)-dt);
     if(this.pressed.has('weapon'))this.cycleWeapon();
     for(const [slot,id] of weaponOrder.entries())if(this.pressed.has('weapon'+slot))this.selectWeapon(id);
@@ -1392,27 +1557,36 @@ class Game {
       }
       p.x=clamp(p.x,28,r.w-28);
     }
+    const activeBoss=this.enemies.some(e=>e.boss&&e.hp&&e.active);
+    const from=this.arrivalDoor;
+    if(from&&(Math.abs(p.x-from.x)>67||Math.abs(p.y-from.y)>67))this.arrivalDoor=null;
+    if(!activeBoss&&p.grounded){
+      const door=r.links.find(l=>!l.side&&!l.manual&&l!==this.arrivalDoor&&Math.abs(p.x-l.x)<27&&
+        Math.abs(p.y-l.y)<15&&this.canPass(l));
+      if(door){this.follow(door);return true;}
+    }
     this.near=this.interaction();
-    if(this.pressed.has('use')&&this.near){
-      const activeBoss=this.enemies.some(e=>e.boss&&e.hp&&e.active);
-      if(!activeBoss&&this.use(this.near))return true;
+    if(!activeBoss&&this.pressed.has('use')&&this.near){
+      if(this.use(this.near))return true;
       this.near=this.interaction();
     }
     return false;
   }
-  shot(x,y,tx,ty,speed,color,r=7){
+  shot(x,y,tx,ty,speed,color,r=7,ordinary=false){
     const a=Math.atan2(ty-y,tx-x);
-    this.projectiles.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:4,color,r});
+    this.projectiles.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:4,color,r,ordinary});
   }
   updateEnemies(dt){
     const p=this.player,r=this.room;
+    const inPocket=Boolean(entryPocket(r,p.x,p.y));
     for(const e of this.enemies){
       if(!e.hp)continue;
       e.flash=Math.max(0,e.flash-dt);e.timer-=dt;
       const dx=p.x-e.x,dy=p.y-e.y,sign=Math.sign(dx)||e.dir;
       if(e.boss){this.updateBoss(e,dt,dx,sign);if(this.mode!=='play')return;continue;}
       const d=ENEMIES[e.type], flying=d.flying, ranged=e.type==='sentry'||e.type==='pod';
-      const engaged=Math.abs(dx)<(ranged?475:340)&&Math.abs(dy)<(flying?246:117);
+      const engaged=!inPocket&&Math.abs(dx)<(ranged?475:340)&&Math.abs(dy)<(flying?246:117);
+      if(inPocket&&(e.mode==='wind'||e.mode==='strike')){e.mode='rest';e.timer=.27;}
       let speed=0;
       if(e.mode==='idle'){
         if(engaged)e.dir=sign;
@@ -1425,7 +1599,7 @@ class Game {
         }
       }else if(e.mode==='wind'&&e.timer<=0){
         e.mode='strike';e.timer=ranged?.20:.23;
-        if(ranged)this.shot(e.x+e.dir*16,e.y-30,p.x,p.y-31,e.type==='pod'?295:345,d.color);
+        if(ranged)this.shot(e.x+e.dir*16,e.y-30,p.x,p.y-31,e.type==='pod'?295:345,d.color,7,true);
       }else if(e.mode==='strike'){
         if(!ranged)speed=e.dir*(flying?296:245);
         if(e.timer<=0){e.mode='rest';e.timer=.53;}
@@ -1433,18 +1607,22 @@ class Game {
       if(e.mode==='stagger'&&e.push){
         speed=e.push;e.push*=Math.exp(-9*dt);
       }
+      const oldX=e.x, oldY=e.y;
       if(flying){
         const target=engaged?clamp(p.y+(e.mode==='strike'?1:-32),190,580):e.homeY+Math.sin(this.time*1.7+e.homeX)*21;
         moveBody(e,speed*dt,clamp((target-e.y)*3,-192,192)*dt,r);keepInside(e,r);
       }else walkEnemy(e,speed*dt,dt,r);
-      if(overlaps(hitBox(p),hitBox(e))&&e.mode!=='stagger')this.hurt(e.x);
+      if(entryPocket(r,e.x,e.y)){
+        e.x=oldX;e.y=oldY;e.vy=0;e.patrol=e.x<e.homeX?1:-1;e.push=0;
+      }
+      if(!inPocket&&overlaps(hitBox(p),hitBox(e))&&e.mode!=='stagger')this.hurt(e.x);
       if(this.mode!=='play')return;
     }
   }
   updateBoss(e,dt,dx,sign){
     const p=this.player,r=this.room,data=BOSSES[e.boss];
     if(!e.active){
-      if(Math.abs(dx)>410)return;
+      if(Math.abs(dx)>410||p.arrivalGrace>0||entryPocket(r,p.x,p.y))return;
       e.active=true;e.timer=.56;
       this.say('守卫苏醒',data.name,2.1);
     }
@@ -1491,16 +1669,18 @@ class Game {
     if(overlaps(hitBox(p),hitBox(e)))this.hurt(e.x);
   }
   updateProjectiles(dt){
+    const inPocket=Boolean(entryPocket(this.room,this.player.x,this.player.y));
     for(let i=this.projectiles.length-1;i>=0;i--){
       const b=this.projectiles[i];b.life-=dt;b.x+=b.vx*dt;b.y+=b.vy*dt;
       const box={x:b.x-b.r,y:b.y-b.r,w:b.r*2,h:b.r*2};
-      const hit=overlaps(box,hitBox(this.player));
+      const pocket=b.ordinary&&entryPocket(this.room,b.x,b.y);
+      const hit=!pocket&&!(b.ordinary&&inPocket)&&overlaps(box,hitBox(this.player));
       const blocked=this.room.solids.some(s=>overlaps(box,s));
       if(hit){
         if(this.player.dashTime>0)this.burst(b.x,b.y,b.color,4);
         else this.hurt(b.x);
       }
-      if(hit||blocked||b.life<=0||b.x<-45||b.x>this.room.w+45||b.y<-35||b.y>H+25)this.projectiles.splice(i,1);
+      if(hit||pocket||blocked||b.life<=0||b.x<-45||b.x>this.room.w+45||b.y<-35||b.y>H+25)this.projectiles.splice(i,1);
       if(this.mode!=='play')return;
     }
     for(let i=this.threats.length-1;i>=0;i--){
@@ -1715,8 +1895,10 @@ const UI={
       let label;
       if(item.kind==='portal'||item.kind==='edge')label=g.canPass(item)?'前往'+ROOMS[item.dest].title:g.lockText(item);
       else label={beacon:'在界标休整',lore:'读取残留记录',ability:'获取'+ABILITIES[item.id]?.name,
-        weapon:'拾取'+WEAPONS[item.id]?.name,shard:'拾取生命残片'}[item.kind];
-      setContent(prompt.lastElementChild,label);setContent(prompt.firstElementChild,stage.classList.contains('touch')?'◇':'E');
+        weapon:'拾取'+WEAPONS[item.id]?.name,cache:'打开补给箱',shard:'拾取生命残片'}[item.kind];
+      const walk=item.kind==='edge'||item.kind==='portal'&&!item.manual;
+      setContent(prompt.lastElementChild,label);
+      setContent(prompt.firstElementChild,walk?'↔':stage.classList.contains('touch')?'◇':'E');
     }
     el('caption').hidden=!g.caption;
     if(g.caption){text('caption-tag',g.caption.tag);text('caption-text',g.caption.text);}
