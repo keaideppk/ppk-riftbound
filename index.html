@@ -138,23 +138,24 @@ const WEAPONS = {
 };
 const weaponOrder=Object.keys(WEAPONS);
 const BOSSES = {
-  foreman:{name:'锻炉监工', seal:'iron', hp:14, color:'#ff9665', title:'钢铁界印', text:'炉心里藏着你的维修记录。记录日期是明天。'},
-  warden:{name:'荆冠守爵', seal:'green', hp:17, color:'#c4da83', title:'荆棘界印', text:'古堡的守爵认出了你的声音。在它等候的那一夜，你没有回来。'},
-  mycel:{name:'母巢共鸣体', seal:'spore', hp:19, color:'#e4a4d2', title:'菌丝界印', text:'菌网留下了一段完整录音。求救的人是你，发出信号的人也是你。'},
-  mirror:{name:'回声行者', hp:23, color:'#9cf5da', title:'信号源', text:'两个声音终于在同一条频率上相遇。'}
+  foreman:{name:'锻炉监工', seal:'iron', hp:14, color:'#ff9665', title:'钢铁界印', moves:['ram','slag','ram'], text:'炉心里藏着你的维修记录。记录日期是明天。'},
+  warden:{name:'荆冠守爵', seal:'green', hp:17, color:'#c4da83', title:'荆棘界印', moves:['thrust','vines','thrust'], text:'古堡的守爵认出了你的声音。在它等候的那一夜，你没有回来。'},
+  mycel:{name:'母巢共鸣体', seal:'spore', hp:19, color:'#e4a4d2', title:'菌丝界印', moves:['spores','brood','spores'], text:'菌网留下了一段完整录音。求救的人是你，发出信号的人也是你。'},
+  mirror:{name:'回声行者', hp:23, color:'#9cf5da', title:'信号源', moves:['replay','blink','replay'], text:'两个声音终于在同一条频率上相遇。'}
 };
 const ENEMIES = {
-  crawler:{hp:2,w:38,h:30,speed:86,wind:.38, color:'#efac79'},
-  sentry:{hp:3,w:35,h:49,speed:63,wind:.57, color:'#f7be86'},
-  bat:{hp:2,w:46,h:29,speed:126,wind:.42, color:'#c1e6a4',flying:true},
-  thorn:{hp:3,w:42,h:40,speed:84,wind:.46, color:'#afd57e'},
-  pod:{hp:3,w:39,h:47,speed:52,wind:.66, color:'#e2a5d4'},
-  mote:{hp:2,w:37,h:43,speed:112,wind:.38, color:'#9ee5db',flying:true}
+  crawler:{hp:2,w:38,h:30,speed:94,range:155,high:75,wind:.36,strike:.43,rest:.63,color:'#efac79'},
+  sentry:{hp:3,w:35,h:49,speed:42,range:380,high:210,wind:.68,strike:.34,rest:.86,color:'#f7be86'},
+  bat:{hp:2,w:46,h:29,speed:105,range:200,high:205,wind:.45,strike:.46,rest:.72,color:'#c1e6a4',flying:true},
+  thorn:{hp:3,w:42,h:40,speed:78,range:115,high:95,wind:.53,strike:.19,rest:.79,color:'#afd57e'},
+  pod:{hp:3,w:39,h:47,speed:0,range:385,high:240,wind:.69,strike:.24,rest:1.02,color:'#e2a5d4'},
+  mote:{hp:2,w:37,h:43,speed:110,range:240,high:195,wind:.44,strike:.22,rest:.73,color:'#9ee5db',flying:true},
+  shade:{hp:2,w:28,h:53,speed:70,range:255,high:90,wind:.64,strike:.16,rest:.85,color:'#b4cafa'}
 };
 const SOLID = (x,y,w,h) => ({x,y,w,h});
 const GROUND = (w, y=FLOOR) => SOLID(0,y,w,160);
 const LEDGE = (x,y,w) => SOLID(x,y,w,26);
-const B = x => ({ kind:'beacon', x, y:FLOOR });
+const B = (x,y=FLOOR,arena) => ({kind:'beacon',x,y,arena});
 const E = (type,x,y=FLOOR) => ({type,x,y});
 const I = (kind,id,x,y=FLOOR,text='') => ({kind,id,x,y,text});
 const C = (id,x,y) => I('cache',id,x,y);
@@ -173,27 +174,27 @@ const ROOMS = {
     LEDGE(403,485,151),LEDGE(544,412,158),LEDGE(715,493,132),
     LEDGE(1386,485,224),LEDGE(1660,388,206),LEDGE(1917,288,296),LEDGE(2260,382,181),LEDGE(2490,486,157)],
     [I('lore','rail-gap',812,FLOOR,'渡桥坍塌。备用相位装置在上方的泵房。'),C('rail-crane',2070,288)],
-    [E('crawler',340),E('sentry',1510),E('crawler',2180),E('mote',2290,351)],
+    [E('crawler',340),E('sentry',1510),E('crawler',2180),E('sentry',2510,486)],
     {hazards:[SOLID(862,690,360,40)],decor:[D('gantry',1860),D('gantry',2405)],anchors:[A(1889,288,2050)]}),
   pump:R('泄压泵房','iron',[1,-1],2260,[GROUND(2260),LEDGE(345,485,166),LEDGE(546,392,212),
     LEDGE(1090,482,195),LEDGE(1320,386,205),LEDGE(1560,289,241),LEDGE(1830,451,184)],
     [B(190),I('ability','dash',658,392),I('weapon','bow',865),C('pump-tanks',1666,289),
       I('lore','pump-overlook',1862,451,'穿过东端检修门，就能回到断桥边。')],
-    [E('crawler',453),E('crawler',963),E('sentry',1420),E('mote',1810,340)],
+    [E('crawler',453),E('crawler',963),E('sentry',1420),E('crawler',1930,451)],
     {decor:[D('boiler',1070),D('boiler',1650)]}),
   foundry:R('悬炉铸造厂','iron',[2,0],3080,[GROUND(3080),LEDGE(291,494,175),LEDGE(489,407,173),
     LEDGE(685,319,200),LEDGE(959,478,182),LEDGE(1246,457,161),
     LEDGE(1645,480,198),LEDGE(1880,380,181),LEDGE(2108,280,264),LEDGE(2423,377,171),LEDGE(2642,477,181)],
-    [B(1182),I('lore','forge-log',1440,FLOOR,'监工执行最后一条指令：关闭铁界。那条指令来自界门站。'),
+    [B(1182),B(2932,FLOOR,'forge'),I('lore','forge-log',1440,FLOOR,'监工执行最后一条指令：关闭铁界。那条指令来自界门站。'),
       C('foundry-cage',2215,280)],
-    [E('sentry',370),E('crawler',703),E('sentry',1049,478),E('crawler',1520),E('sentry',2560),E('mote',2360,333)],
+    [E('sentry',370),E('crawler',703),E('sentry',1049,478),E('crawler',1520),E('sentry',2560),E('crawler',2280,280)],
     {hazards:[SOLID(1850,577,234,15)],decor:[D('gantry',2130),D('boiler',2670)],
       anchors:[A(662,319,752),A(1853,380,1960),A(2080,280,2207)]}),
   cistern:R('余温蓄槽','iron',[2,-1],2050,[GROUND(2050),LEDGE(481,470,143),LEDGE(731,389,135),LEDGE(970,473,145),
     LEDGE(1171,426,167),LEDGE(1390,330,174),LEDGE(1620,233,218)],
     [I('shard','iron-shard',1730,233),C('cistern-valve',795,389),
       I('lore','iron-log',1057,FLOOR,'给下一位行者：炉里的灯亮着，说明这里还有人记得我们。')],
-    [E('sentry',451),E('mote',760,330),E('mote',1510,279)],{hazards:[SOLID(628,569,169,23)],decor:[D('boiler',1460)]}),
+    [E('sentry',451),E('crawler',777,389),E('sentry',1510,330)],{hazards:[SOLID(628,569,169,23)],decor:[D('boiler',1460)]}),
   forge:R('焚心熔炉','iron',[3,0],1280,[GROUND(1280),LEDGE(284,460,162),LEDGE(843,460,160)],[],[],{boss:'foreman'}),
   woods:R('银桦渡口','green',[-1,0],2840,[GROUND(2840),LEDGE(319,481,174),LEDGE(680,493,180),LEDGE(468,402,164),
     LEDGE(1550,491,190),LEDGE(1790,392,178),LEDGE(2014,291,231),LEDGE(2290,393,162),LEDGE(2500,490,175)],
@@ -211,7 +212,7 @@ const ROOMS = {
   canopy:R('钟冠阶廊','green',[-2,0],2780,[GROUND(2780),LEDGE(710,428,164),LEDGE(492,235,170),
     LEDGE(376,469,145),LEDGE(273,365,172),
     LEDGE(1530,478,208),LEDGE(1784,377,189),LEDGE(2023,277,232),LEDGE(2290,375,175),LEDGE(2510,473,168)],
-    [B(1165),I('lore','bell-route',934,FLOOR,'依次勾住阶廊上方的吊环，钟冠顶端的门通向守爵。'),
+    [B(1165),B(630,235,'keep'),I('lore','bell-route',934,FLOOR,'依次勾住阶廊上方的吊环，钟冠顶端的门通向守爵。'),
       C('canopy-crown',2140,277)],
     [E('bat',1330,350),E('thorn',1610),E('bat',252,396),E('thorn',2040),E('bat',2350,346)],
     {hazards:[SOLID(1738,579,191,13)],decor:[D('window',707),D('tree',2110),D('window',2460)],
@@ -235,7 +236,7 @@ const ROOMS = {
   sump:R('孢雾竖井','spore',[1,1],2890,[GROUND(2890),LEDGE(329,499,156),LEDGE(555,369,173),
     LEDGE(95,492,144),LEDGE(836,215,273),LEDGE(1173,441,145),LEDGE(1460,484,184),LEDGE(1695,380,166),LEDGE(1910,276,227),
     LEDGE(2190,367,184),LEDGE(2420,455,205)],
-    [B(182),I('lore','jump-log',703,FLOOR,'有了回声跃，就能从井壁残留的平台抵达上方界门。'),
+    [B(182),B(1047,215,'heart'),I('lore','jump-log',703,FLOOR,'有了回声跃，就能从井壁残留的平台抵达上方界门。'),
       C('sump-vent',2030,276)],
     [E('pod',391),E('mote',689,308),E('pod',1290),E('pod',2090),E('mote',2270,323)],
     {hazards:[SOLID(886,570,209,22),SOLID(1815,572,211,20)],decor:[D('culture',1655),D('culture',2290)]}),
@@ -248,9 +249,9 @@ const ROOMS = {
   rift:R('断层回廊','rift',[0,-1],2590,[SOLID(0,FLOOR,421,150),SOLID(797,551,333,169),SOLID(1380,FLOOR,1210,160),
     LEDGE(502,516,104),LEDGE(609,441,105),LEDGE(1194,462,91),LEDGE(1530,483,175),LEDGE(1760,381,169),
     LEDGE(1980,278,245),LEDGE(2300,410,163)],
-    [B(166),I('lore','rift-log',966,551,'当三座界域同时断开，界门站救下了你的一段回声。它一直在等待你。'),
+    [B(166),B(2470,FLOOR,'core'),I('lore','rift-log',966,551,'当三座界域同时断开，界门站救下了你的一段回声。它一直在等待你。'),
       C('rift-trace',2090,278)],
-    [E('mote',649,387),E('mote',1120,435),E('sentry',1519),E('mote',2075,229)],
+    [E('shade',664,441),E('shade',1002,551),E('shade',1519),E('shade',2075,278)],
     {hazards:[SOLID(421,690,376,40),SOLID(1130,690,250,40)],decor:[D('window',2110)]}),
   core:R('信号尽头','rift',[0,-2],1280,[GROUND(1280),LEDGE(291,454,153),LEDGE(825,446,151)],[],[],{boss:'mirror'})
 };
@@ -285,8 +286,15 @@ connect('rift','core',EDGE('right'),EDGE('left'));
 for (const [id,x] of [['forge',1116],['keep',147],['heart',1104]]) {
   ROOMS[id].links.push({...GATE(x,FLOOR,'boss'),dest:'hub',spawn:325,spawnY:FLOOR});
 }
-for(const room of Object.values(ROOMS)){
-  for(const item of room.items)if(item.kind==='beacon')room.arrivals.push({x:item.x,y:item.y});
+const BEACONS=new Map();
+for(const [id,room] of Object.entries(ROOMS)){
+  for(const item of room.items){
+    if(item.kind!=='beacon')continue;
+    item.id=item.arena?`${item.arena}-entry`:id;
+    item.room=id;
+    BEACONS.set(item.id,item);
+    room.arrivals.push({x:item.x,y:item.y});
+  }
 }
 const entryPocket=(room,x,y,radius=132)=>room.arrivals.find(a=>Math.abs(x-a.x)<radius&&Math.abs(y-a.y)<104);
 const mapOrder = Object.keys(ROOMS);
@@ -532,11 +540,16 @@ function device(c,x,y,s,t,active=true,time=0,large=false){
   }
   c.restore();
 }
-function beaconArt(c,x,y,t){
+function beaconArt(c,x,y,t,arena=false){
   glow(c,x,y-30,73,'#9bddc957','#9bddc900');
   poly(c,'#172929',[[x-31,y],[x-20,y-9],[x-10,y-12],[x-5,y-42],[x+7,y-42],[x+13,y-12],[x+22,y-9],[x+31,y]]);
   line(c,t.rim,2,[x-23,y-2],[x-9,y-11],[x-5,y-42],[x+7,y-42],[x+9,y-20]);
   poly(c,'#b2e8d3',[[x+1,y-61],[x+8,y-51],[x+1,y-43],[x-7,y-51]]);
+  if(arena){
+    line(c,'#f3cd91',2,[x-13,y-54],[x-4,y-65],[x+6,y-65],[x+15,y-54]);
+    line(c,'#f3cd91',1.5,[x-42,y-6],[x-24,y-6]);
+    line(c,'#f3cd91',1.5,[x+24,y-6],[x+42,y-6]);
+  }
 }
 function drawAnchor(c,anchor,active,unlocked,time){
   const {x,y}=anchor,color=active?'#e3ffb8':unlocked?'#a0b785':'#788376';
@@ -569,7 +582,7 @@ function drawGrappleLine(c,p,time){
 }
 function marker(c,item,t,time){
   const {x,y,kind}=item;
-  if(kind==='beacon'){beaconArt(c,x,y,t);return;}
+  if(kind==='beacon'){beaconArt(c,x,y,t,item.arena);return;}
   if(kind==='cache'){
     glow(c,x,y-16,51,'#b0e7bd44','#b0e7bd00');
     facet(c,[[x-20,y-2],[x-20,y-21],[x-13,y-27],[x+13,y-27],[x+20,y-21],[x+20,y-2]],'#314b44');
@@ -694,6 +707,65 @@ function drawAttack(c,p){
   }
   c.restore();
 }
+function drawThreat(c,h,time){
+  const {x,y,w,h:height,color,kind}=h,left=x-w/2,right=x+w/2,top=y-height;
+  c.save();
+  if(h.delay>0){
+    const alpha=.54+Math.sin(time*24)*.16;
+    c.fillStyle=color;c.globalAlpha=alpha*.24;c.fillRect(left,top,w,height);
+    c.globalAlpha=alpha;
+    line(c,color,2,[left,top+7],[left,top],[left+8,top]);
+    line(c,color,2,[right-8,top],[right,top],[right,top+7]);
+    line(c,color,3,[left,y-2],[right,y-2]);
+    for(let i=left+10;i<right-2;i+=15)line(c,color,1.3,[i-5,y-4],[i,y-10]);
+  }else if(kind==='cloud'||kind==='brood'){
+    c.beginPath();c.rect(left,top,w,height);c.clip();
+    c.globalAlpha=.26+Math.min(1,h.life)*.17;
+    for(let i=0;i<7;i++){
+      const dy=24+Math.sin(time*6+i*2.8)*13;
+      oval(c,color,lerp(left+11,right-11,i/6),y-dy-6,height*.38,dy*.98);
+    }
+    c.globalAlpha=.52;line(c,color,2,[left,y-2],[right,y-2]);
+  }else if(kind==='steam'||kind==='roots'){
+    c.globalAlpha=Math.min(.93,h.life*5);
+    for(let i=0;i<5;i++){
+      const start=lerp(left+6,right-6,i/4),bend=Math.sin(time*19+i*5)*8;
+      poly(c,color,[[start-8,y],[start-4,top+height*.50],[start+bend,top+(i%2)*10],
+        [start+4,top+height*.52],[start+7,y]]);
+    }
+    line(c,'#fff1d4',1.8,[left,y-2],[right,y-2]);
+  }else{
+    c.globalAlpha=Math.min(.96,h.life*5);
+    poly(c,color,[[left,y-9],[left+w*.18,top+9],[right,top+6],[right-w*.16,y-height*.31],[x,y-6]]);
+    line(c,'#fff1d4',1.6,[left+w*.12,y-height*.36],[x,top+7],[right,top+6]);
+    if(kind==='echo')line(c,color,3,[left,y-2],[right,y-2]);
+  }
+  c.restore();
+}
+function drawEnemyTell(c,e,r){
+  if(e.mode!=='wind')return;
+  if(e.action==='blink'){
+    c.save();c.globalAlpha=.39;
+    drawHero(c,{x:e.blinkX,y:FLOOR,dir:e.blinkDir,vx:0,grounded:true},0,false,true);
+    c.restore();return;
+  }
+  if(e.action==='ram'||e.type==='crawler'){
+    const color=e.boss?BOSSES[e.boss].color:ENEMIES[e.type].color;
+    const end=clamp(e.x+e.dir*(e.boss?(e.phase?410:345):170),20,r.w-20);
+    line(c,color+'aa',3,[e.x,e.y-8],[end,e.y-8]);
+    line(c,color,2,[end-e.dir*12,e.y-15],[end,e.y-8],[end-e.dir*12,e.y-1]);
+    return;
+  }
+  if(e.type==='sentry'||e.type==='bat'||e.action==='replay'&&e.replay==='bow'){
+    const color=e.boss?BOSSES[e.boss].color:ENEMIES[e.type].color;
+    const y=e.y-30,tx=e.boss?e.x+e.dir*450:e.aimX,ty=e.boss?y:e.type==='bat'?e.aimY-18:e.aimY;
+    const dx=tx-e.x,dy=ty-y;
+    let dist=1;
+    for(const solid of r.solids)dist=Math.min(dist,segmentEntry(e.x,y,dx,dy,solid));
+    c.save();c.setLineDash([7,8]);
+    line(c,color+'9b',1.5,[e.x,y],[e.x+dx*dist,y+dy*dist]);c.restore();
+  }
+}
 function renderScene(g,c,title=false){
   const room=ROOMS[title?'hub':g.id], t=THEMES[room.theme], a=artFor(title?'hub':g.id);
   const time=g.time, reduce=g.settings.motion;
@@ -759,20 +831,8 @@ function renderScene(g,c,title=false){
       glow(c,p.x,p.y,27,p.color+'99',p.color+'00');oval(c,p.color,p.x,p.y,p.r,p.r*.67);
       line(c,p.color+'86',2,[p.x,p.y],[p.x-p.vx*.046,p.y-p.vy*.046]);
     }
-    for(const h of g.threats){
-      if(h.delay>0){
-        c.globalAlpha=.45+Math.sin(time*26)*.19;
-        line(c,h.color,3,[h.x-h.w/2,FLOOR-3],[h.x+h.w/2,FLOOR-3]);
-        poly(c,h.color,[[h.x,FLOOR-5],[h.x-5,FLOOR-14],[h.x+5,FLOOR-14]]);
-      }else{
-        c.globalAlpha=Math.min(1,h.life*4);
-        const [l,r]=[h.x-h.w/2,h.x+h.w/2];
-        poly(c,h.color,[[l,FLOOR],[l+8,FLOOR-h.h*.46],[h.x-4,FLOOR-h.h],[h.x+13,FLOOR-h.h*.59],[r,FLOOR]]);
-        line(c,'#fff4d9',1.5,[l+4,FLOOR],[h.x-4,FLOOR-h.h],[h.x+3,FLOOR-h.h*.67]);
-      }
-      c.globalAlpha=1;
-    }
-    for(const e of g.enemies)if(e.hp>0)drawEnemy(c,e,time);
+    for(const h of g.threats)drawThreat(c,h,time);
+    for(const e of g.enemies)if(e.hp>0){drawEnemyTell(c,e,room);drawEnemy(c,e,time);}
     if(target?.enemy){
       const e=target.enemy,y=e.y-e.h-11;
       line(c,'#d7f8aabf',1.5,[e.x-6,y-4],[e.x,y+2],[e.x+6,y-4]);
@@ -1053,14 +1113,39 @@ function drawEnemy(c,e,time){
     c.save();c.translate(e.x,e.y);c.scale(e.dir,1);
     c.rotate(wind?-.11:strike?.11:0);
     if(w)bossRig(c,e,col,wind,strike,pulse);
-    else if(data.flying){
-      const palette=e.type==='bat'?IVY:SPORE,flap=wind?-22:Math.sin(time*14+e.x*.06)*13;
+    else if(e.type==='mote'){
+      const swing=Math.sin(time*10+e.x*.08)*4;
+      for(const s of [-1,1]){
+        line(c,'#625571',5,[s*5,-28],[s*15,-19+swing],[s*10,-8]);
+        line(c,col+'9e',1.5,[s*5,-28],[s*15,-19+swing],[s*10,-8]);
+        oval(c,SPORE[1],s*15,-19+swing,4.5,3);
+      }
+      facet(c,[[-12,-22],[-10,-36],[0,-43],[11,-36],[13,-22],[5,-11],[-5,-11]],SPORE[2]);
+      gem(c,0,-29,wind?9:6,wind?10:7,col);
+    }else if(data.flying){
+      const palette=IVY,flap=wind?-22:Math.sin(time*14+e.x*.06)*13;
       for(const s of [-1,1]){
         facet(c,[[s*3,-16],[s*11,-28],[s*27,-25+flap],[s*23,-10+flap*.65],[s*14,-13],[s*8,-7]],palette[2]);
         line(c,palette[1],1.7,[s*6,-14],[s*12,-25],[s*26,-23+flap]);
         line(c,palette[0],.9,[s*9,-18],[s*18,-19],[s*22,-12+flap*.65]);
       }
       plate(c,0,-19,16,28,.08,palette);gem(c,2,-22,4,4,col);
+    }else if(e.type==='shade'){
+      c.globalAlpha=e.mode==='wind'?.86:.66;
+      const sway=Math.sin(time*7+e.x*.1)*3;
+      facet(c,[[-19,-1],[-12,-36],[-11,-48],[-3,-57],[8,-55],[17,-44],[11,-33],[17+sway,-5],[0,-12]],'#35405d');
+      line(c,col+'b0',2,[-12,-39],[-9,-49],[1,-55],[12,-51]);
+      line(c,col,2,[4,-45],[13,-43]);
+      line(c,col+'80',1.8,[-15,-8],[-8,-13],[0,-12],[10,-9]);
+    }else if(e.type==='pod'){
+      for(const s of [-1,1]){
+        line(c,SPORE[2],6,[0,-21],[s*12,-8],[s*22,-1]);
+        line(c,SPORE[1],1.4,[s*4,-20],[s*12,-8],[s*22,-1]);
+      }
+      facet(c,[[-11,-4],[-16,-26],[-9,-41],[7,-45],[16,-27],[9,-4]],SPORE[2]);
+      c.beginPath();c.moveTo(-23,-32);c.bezierCurveTo(-17,-55,20,-59,23,-34);c.quadraticCurveTo(1,-24,-23,-32);
+      c.fillStyle=gradient(c,-52,-26,...SPORE);c.fill();c.strokeStyle=INK;c.lineWidth=2;c.stroke();
+      for(const x of [-9,0,9])oval(c,col,x,-35-Math.abs(x)*.23,wind?3:2.2,3.4);
     }else{
       const palette=e.type==='thorn'?IVY:e.type==='pod'?SPORE:IRON, crawler=e.type==='crawler';
       const y=crawler?-17:-27;
@@ -1077,6 +1162,10 @@ function drawEnemy(c,e,time){
         const h=e.type==='thorn'||e.type==='pod'?8:3;
         poly(c,palette[0],[[x,top],[x+2,top-h],[x+4,top]]);
       }
+      if(e.type==='sentry'){
+        plate(c,19,-33,30,9,.04,IRON);
+        line(c,col,wind?2.2:1.2,[16,-35],[30,-35]);
+      }
     }
     if(e.flash>0){
       c.globalAlpha=.62;line(c,'#fff0cd',2,[-12,-e.h*.60],[14,-e.h*.53]);c.globalAlpha=1;
@@ -1086,6 +1175,13 @@ function drawEnemy(c,e,time){
   if(wind){
     const y=e.y-e.h-(w?34:16),k=.55+Math.sin(time*28)*.28;
     c.globalAlpha=k;gem(c,e.x,y,4,6,data.color);c.globalAlpha=1;
+  }
+  if(guards(e)||e.blockFlash>0){
+    const x=e.x+e.dir*(e.w*.56+5),y=e.y-e.h*.54,s=e.dir;
+    c.globalAlpha=e.blockFlash>0?.97:.68;
+    poly(c,'#364b37',[[x-s*5,y-22],[x+s*11,y-15],[x+s*13,y+9],[x,y+20],[x-s*8,y+6]]);
+    line(c,e.blockFlash>0?'#fff5b4':'#b4cf87',2,[x-s*5,y-22],[x+s*11,y-15],[x+s*13,y+9],[x,y+20]);
+    c.globalAlpha=1;
   }
 }
 
@@ -1098,7 +1194,7 @@ const readStore = key => {
 function writeStore(key,data) {
   try { localStorage.setItem(key,JSON.stringify(data)); return true; } catch { return false; }
 }
-const beacons=Object.keys(ROOMS).filter(id=>ROOMS[id].items.some(item=>item.kind==='beacon'));
+const beaconIds=[...BEACONS.keys()];
 const shardIds=Object.values(ROOMS).flatMap(room=>room.items.filter(i=>i.kind==='shard').map(i=>i.id));
 const cacheIds=Object.values(ROOMS).flatMap(room=>room.items.filter(i=>i.kind==='cache').map(i=>i.id));
 const validatedSet=(list,valid)=>new Set(Array.isArray(list)?list.filter(id=>typeof id==='string'&&valid.includes(id)):[]);
@@ -1109,9 +1205,9 @@ function stateFrom(raw) {
     shards:validatedSet(raw?.shards,shardIds),
     caches:validatedSet(raw?.caches,cacheIds),
     visited:validatedSet(raw?.visited,mapOrder),
-    beacons:validatedSet(raw?.beacons,beacons),
+    beacons:validatedSet(raw?.beacons,beaconIds),
     weapons:validatedSet(raw?.weapons,weaponOrder),
-    checkpoint:beacons.includes(raw?.checkpoint)?raw.checkpoint:'hub',
+    checkpoint:BEACONS.has(raw?.checkpoint)?raw.checkpoint:'hub',
     deaths:clamp(Number.isFinite(raw?.deaths)?Math.trunc(raw.deaths):0,0,999999),
     elapsed:clamp(Number.isFinite(raw?.elapsed)?raw.elapsed:0,0,999999),
     seals:new Set()
@@ -1243,6 +1339,15 @@ function grapplePathClear(room,p,x,y){
     {x:b.x-half+.01,y:b.y+.01,w:b.w+p.w-.02,h:b.h+p.h-.02})===Infinity);
 }
 function keepInside(e,r) {e.x=clamp(e.x,e.w*.5,r.w-e.w*.5);}
+function surfaceBelow(room,x,y){
+  return room.solids.reduce((floor,b)=>x>=b.x&&x<=b.x+b.w&&b.y>=y-4?Math.min(floor,b.y):floor,FLOOR);
+}
+const guards=e=>e.boss==='warden'&&e.mode==='idle'||e.type==='thorn'&&['idle','wind'].includes(e.mode);
+function makeEnemy(type,x,y,timer){
+  const d=ENEMIES[type];
+  return {type,x,y,homeX:x,homeY:y,dir:-1,patrol:-1,w:d.w,h:d.h,hp:d.hp,flash:0,vy:0,
+    grounded:!d.flying,mode:'idle',timer};
+}
 function walkEnemy(e,dx,dt,r){
   const ahead=e.x+Math.sign(dx)*(e.w*.54+Math.abs(dx));
   const probe={x:ahead-2,y:e.y+2,w:4,h:9};
@@ -1287,18 +1392,14 @@ class Game {
     else if(this.state.defeated.has('mirror'))this.say('界门站','信号已恢复。你仍然可以探索剩下的房间。',4.5);
   }
   enterCheckpoint(id){
-    const b=ROOMS[id].items.find(item=>item.kind==='beacon');
-    this.enter(id,b.x,b.y);
+    const b=BEACONS.get(id);
+    this.enter(b.room,b.x,b.y);
   }
   enter(id,x,y){
     const r=ROOMS[id];
     this.id=id;this.room=r;this.near=null;this.entryX=x;this.entryY=y;this.state.visited.add(id);
-    this.arrivalDoor=r.links.find(l=>!l.side&&!l.manual&&Math.abs(x-l.x)<64&&Math.abs(y-l.y)<56);
-    this.enemies=r.mobs.filter(m=>!entryPocket(r,m.x,m.y)).map(({type,x,y})=>{
-      const d=ENEMIES[type];
-      return {type,x,y,homeX:x,homeY:y,dir:-1,patrol:-1,w:d.w,h:d.h,hp:d.hp,flash:0,vy:0,
-        grounded:!d.flying,mode:'idle',timer:.2+this.random()*.5};
-    });
+    this.arrivalDoor=r.links.find(l=>!l.side&&!l.manual&&Math.abs(x-l.x)<27&&Math.abs(y-l.y)<15);
+    this.enemies=r.mobs.filter(m=>!entryPocket(r,m.x,m.y)).map(({type,x,y})=>makeEnemy(type,x,y,.2+this.random()*.5));
     if(r.boss&&!this.state.defeated.has(r.boss)){
       const data=BOSSES[r.boss], hp=this.settings.difficulty==='story'?Math.ceil(data.hp*.73):data.hp;
       this.enemies.push({boss:r.boss,x:640,y:FLOOR,w:70,h:91,hp,max:hp,dir:x>640?1:-1,patrol:1,vy:0,
@@ -1307,23 +1408,26 @@ class Game {
     const p=this.player;
     Object.assign(p,{x,y,vx:0,vy:0,grounded:true,attack:null,comboQueued:false,coyote:.10,
       buffer:0,dashTime:0,dashCooldown:0,grapple:null,grappleCooldown:0,airJump:false,airDash:false,
-      knock:0,walkT:0,arrivalGrace:1.15});
+      knock:0,walkT:0,lastMove:'blade',arrivalGrace:1.15});
     p.dir=x>r.w*.74?-1:1;
     this.camera=clamp(x-W*.45,0,r.w-W);this.projectiles.length=0;this.bolts.length=0;this.threats.length=0;
     this.pool.push(...this.particles);this.particles.length=0;
     this.transition=.25;this.banner=2.05;this.stop=0;this.shake=0;artFor(id);
   }
-  checkpoint(announce=true){
+  setCheckpoint(beacon){
     const p=this.player;
-    this.state.beacons.add(this.id);this.state.checkpoint=this.id;
+    this.state.beacons.add(beacon.id);this.state.checkpoint=beacon.id;
     p.health=maxHealth(this);p.energy=Math.max(1,p.energy);
+  }
+  checkpoint(beacon){
+    this.setCheckpoint(beacon);
     const ok=this.save();
-    if(announce)this.say('界标',ok?'生命已恢复。可打开地图传送至已点亮的界标。':'生命已恢复。浏览器存储不可用。',4.3);
+    this.say('界标',ok?'生命已恢复。可打开地图传送至已点亮的界标。':'生命已恢复。浏览器存储不可用。',4.3);
     this.audio.play('heal');
   }
   travel(id){
-    if(this.mode!=='map'||this.near?.kind!=='beacon'||!this.state.beacons.has(id)||id===this.id)return;
-    this.enterCheckpoint(id);this.checkpoint(false);this.audio.play('door');this.setMode('play');
+    if(this.mode!=='map'||this.near?.kind!=='beacon'||!this.state.beacons.has(id)||id===this.near.id)return;
+    this.enterCheckpoint(id);this.setCheckpoint(BEACONS.get(id));this.save();this.audio.play('door');this.setMode('play');
   }
   collected(item){
     if(item.kind==='ability')return this.state.abilities.has(item.id);
@@ -1345,7 +1449,11 @@ class Game {
   }
   say(tag,text,duration=4.7){this.caption={tag,text,duration};}
   follow(link){
-    this.enter(link.dest,link.spawn,link.spawnY);this.audio.play('door');this.save();
+    const beacon=this.room.items.find(item=>item.arena===link.dest);
+    if(beacon)this.setCheckpoint(beacon);
+    this.enter(link.dest,link.spawn,link.spawnY);this.audio.play('door');
+    const saved=this.save();
+    if(beacon)this.say('战前界标',saved?'进度已保存，生命已恢复。':'生命已恢复。浏览器存储不可用。',2.2);
   }
   interaction(){
     const p=this.player;
@@ -1363,7 +1471,7 @@ class Game {
       this.say('界门',this.lockText(item),2.4);return false;
     }
     if(item.kind==='portal'||item.kind==='edge')return false;
-    if(item.kind==='beacon'){this.checkpoint();return false;}
+    if(item.kind==='beacon'){this.checkpoint(item);return false;}
     if(item.kind==='lore'){this.say('残留记录',item.text);return false;}
     if(item.kind==='cache'){
       const p=this.player;
@@ -1439,6 +1547,7 @@ class Game {
     const p=this.player,weapon=this.state.weapon,data=WEAPONS[weapon];
     p.comboQueued=false;
     if(data.cost&&p.energy<data.cost){this.showDry();return;}
+    p.lastMove=weapon;
     p.attack={weapon,move:data.moves[combo-1],combo,t:0,hits:new Set(),fired:false,granted:false};
     this.audio.play({blade:'slash',spear:'spear',hammer:'charge',bow:'charge'}[weapon]);
   }
@@ -1498,14 +1607,20 @@ class Game {
       p.comboQueued=false;
     }
   }
-  damageEnemy(e,atk){
+  damageEnemy(e,atk,fromX=this.player.x){
     if(atk.hits.has(e))return;
-    atk.hits.add(e);e.hp=Math.max(0,e.hp-atk.move.damage);e.flash=.12;
+    atk.hits.add(e);
+    if(guards(e)&&(fromX-e.x)*e.dir>0){
+      e.blockFlash=.17;this.audio.play('equip');
+      this.burst(e.x+e.dir*e.w*.5,e.y-e.h*.56,'#edf2ad',8,true);return;
+    }
+    e.hp=Math.max(0,e.hp-atk.move.damage);e.flash=.12;
     const p=this.player,c=WEAPONS[atk.weapon].color,move=atk.move;
     if(!atk.granted&&move.energy){p.energy=Math.min(6,p.energy+(e.hp?move.energy:move.kill||move.energy));atk.granted=true;}
     this.stop=Math.max(this.stop,atk.move.stop);this.shake=Math.max(4,atk.combo===2?8:5);
     this.audio.play('hit');this.burst(e.x,e.y-e.h*.57,c,e.hp?14:24,true);
     if(e.hp&&!e.boss){
+      this.threats=this.threats.filter(h=>h.source!==e||h.delay<=0);
       e.mode='stagger';e.timer=move.stagger||.21;e.dir=p.x<e.x?-1:1;
       e.push=-(move.push||0)*e.dir;
     }
@@ -1514,6 +1629,7 @@ class Game {
   defeat(e){
     const boss=BOSSES[e.boss];
     this.state.defeated.add(e.boss);this.projectiles.length=0;this.threats.length=0;
+    for(const enemy of this.enemies)if(enemy.summoned)enemy.hp=0;
     this.player.health=maxHealth(this);this.saveBoss(boss);
     this.say(boss.title,boss.text,7);this.audio.play('collect');
     if(!boss.seal)this.winTime=1.25;
@@ -1588,6 +1704,7 @@ class Game {
     }
     if(!p.knock&&this.pressed.has('dash')&&this.state.abilities.has('dash')&&!p.dashCooldown&&!p.airDash){
       p.dir=input||p.dir;p.dashTime=.252;p.dashCooldown=.42;p.airDash=!p.grounded;p.vy=0;
+      p.lastMove='dash';
       p.attack=null;p.comboQueued=false;this.audio.play('dash');
       this.burst(p.x,p.y-29,'#f1ba85',13,true);
     }
@@ -1670,47 +1787,79 @@ class Game {
     const a=Math.atan2(ty-y,tx-x);
     this.projectiles.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,life:4,color,r,ordinary});
   }
+  queueThreat({x,y=FLOOR,w,h,delay,life=.24,color,kind,source,spawn}){
+    this.threats.push({x,y,w,h,delay,life,color,kind,source,spawn});
+  }
   updateEnemies(dt){
     const p=this.player,r=this.room;
     const inPocket=Boolean(entryPocket(r,p.x,p.y));
     for(const e of this.enemies){
       if(!e.hp)continue;
-      e.flash=Math.max(0,e.flash-dt);e.timer-=dt;
+      e.flash=Math.max(0,e.flash-dt);e.blockFlash=Math.max(0,(e.blockFlash||0)-dt);e.timer-=dt;
       const dx=p.x-e.x,dy=p.y-e.y,sign=Math.sign(dx)||e.dir;
       if(e.boss){this.updateBoss(e,dt,dx,sign);if(this.mode!=='play')return;continue;}
-      const d=ENEMIES[e.type], flying=d.flying, ranged=e.type==='sentry'||e.type==='pod';
-      const engaged=!inPocket&&Math.abs(dx)<(ranged?475:340)&&Math.abs(dy)<(flying?246:117);
-      if(inPocket&&(e.mode==='wind'||e.mode==='strike')){e.mode='rest';e.timer=.27;}
+      const d=ENEMIES[e.type],flying=d.flying;
+      const engaged=!inPocket&&Math.abs(dx)<d.range+135&&Math.abs(dy)<d.high+50;
+      if(inPocket&&(e.mode==='wind'||e.mode==='strike')&&!e.summoned){e.mode='rest';e.timer=.27;}
       let speed=0;
+      let height=e.homeY+Math.sin(this.time*1.7+e.homeX)*18;
       if(e.mode==='idle'){
         if(engaged)e.dir=sign;
-        const attack=Math.abs(dx)<(ranged?365:flying?167:105)&&Math.abs(dy)<(flying?171:95);
-        if(engaged&&e.timer<=0&&attack){e.mode='wind';e.timer=d.wind;}
+        const distance=Math.abs(dx);
+        if(engaged&&e.timer<=0&&distance<d.range&&Math.abs(dy)<d.high){
+          e.mode='wind';e.timer=d.wind;this.prepareEnemy(e,d,p);
+        }
         else {
           if(Math.abs(e.x-e.homeX)>145)e.patrol=e.x<e.homeX?1:-1;
-          speed=d.speed*(engaged?(ranged&&Math.abs(dx)<220?-sign:sign):e.patrol*.62);
+          speed=d.speed*(engaged?sign:e.patrol*.62);
+          if(engaged&&e.type==='sentry')speed=0;
+          if(engaged&&e.type==='mote'&&distance<155)speed=-sign*d.speed;
+          if(engaged&&flying)height=clamp(p.y-(e.type==='bat'?120:53),145,567);
           if(!engaged)e.dir=e.patrol;
         }
       }else if(e.mode==='wind'&&e.timer<=0){
-        e.mode='strike';e.timer=ranged?.20:.23;
-        if(ranged)this.shot(e.x+e.dir*16,e.y-30,p.x,p.y-31,e.type==='pod'?295:345,d.color,7,true);
+        e.mode='strike';e.timer=d.strike;
+        if(e.type==='sentry'){
+          this.shot(e.x+e.dir*19,e.y-34,e.aimX,e.aimY,440,d.color,6,true);
+          e.repeatShot=true;
+        }
+        if(e.type==='mote'){
+          for(const offset of [-72,0,72])this.shot(e.x+e.dir*16,e.y-24,e.aimX,e.aimY+offset,280,d.color,7,true);
+        }
       }else if(e.mode==='strike'){
-        if(!ranged)speed=e.dir*(flying?296:245);
-        if(e.timer<=0){e.mode='rest';e.timer=.53;}
+        if(e.type==='crawler')speed=e.dir*378;
+        if(e.type==='bat'){speed=clamp((e.aimX-e.x)*6,-430,430);height=e.aimY;}
+        if(e.type==='mote')speed=-e.dir*195;
+        if(e.type==='sentry'&&e.repeatShot&&e.timer<.16){
+          e.repeatShot=false;this.shot(e.x+e.dir*19,e.y-23,e.aimX,e.aimY+11,440,d.color,6,true);
+        }
+        if(e.timer<=0){e.mode='rest';e.timer=d.rest;}
       }else if(e.mode!=='wind'&&e.timer<=0){e.mode='idle';e.timer=.28;}
       if(e.mode==='stagger'&&e.push){
         speed=e.push;e.push*=Math.exp(-9*dt);
       }
       const oldX=e.x, oldY=e.y;
       if(flying){
-        const target=engaged?clamp(p.y+(e.mode==='strike'?1:-32),190,580):e.homeY+Math.sin(this.time*1.7+e.homeX)*21;
-        moveBody(e,speed*dt,clamp((target-e.y)*3,-192,192)*dt,r);keepInside(e,r);
+        if(e.mode==='wind')height=e.windY;
+        const dive=e.type==='bat'&&e.mode==='strike';
+        moveBody(e,speed*dt,clamp((height-e.y)*(dive?8:3),-200,dive?500:200)*dt,r);keepInside(e,r);
       }else walkEnemy(e,speed*dt,dt,r);
       if(entryPocket(r,e.x,e.y)){
         e.x=oldX;e.y=oldY;e.vy=0;e.patrol=e.x<e.homeX?1:-1;e.push=0;
       }
       if(!inPocket&&overlaps(hitBox(p),hitBox(e))&&e.mode!=='stagger')this.hurt(e.x);
       if(this.mode!=='play')return;
+    }
+  }
+  prepareEnemy(e,d,p){
+    e.aimX=p.x;e.aimY=e.type==='bat'?p.y:p.y-30;e.windY=e.y;
+    if(e.type==='thorn'){
+      this.queueThreat({x:e.x+e.dir*82,y:e.y,w:118,h:48,delay:d.wind,life:d.strike,color:d.color,kind:'slash',source:e});
+    }
+    if(e.type==='pod'||e.type==='shade'){
+      const x=clamp(p.x,e.w,this.room.w-e.w);
+      this.queueThreat({x,y:surfaceBelow(this.room,x,p.y),w:e.type==='pod'?110:78,h:e.type==='pod'?69:61,
+        delay:d.wind,life:e.type==='pod'?1.38:.23,color:d.color,kind:e.type==='pod'?'cloud':'echo',source:e});
     }
   }
   updateBoss(e,dt,dx,sign){
@@ -1726,41 +1875,80 @@ class Game {
     if(e.mode==='idle'){
       e.dir=sign;
       if(e.timer<=0){
-        const patterns={foreman:['rush','quake','volley'],warden:['rush','roots','rush','quake'],
-          mycel:['volley','bloom','volley','quake'],mirror:['rush','echo','quake','volley']};
-        const list=patterns[e.boss];
-        e.action=list[e.cycles++%list.length];e.mode='wind';e.timer=phase?.44:.65;
+        e.action=data.moves[e.cycles++%data.moves.length];e.mode='wind';
+        e.timer=this.settings.difficulty==='story'?.96:phase?.62:.79;
+        this.prepareBoss(e,data,p);
         this.audio.play('warn');
-      }else if(Math.abs(dx)>121)vx=sign*(phase?158:119);
+      }else if(e.boss!=='mycel'&&Math.abs(dx)>(e.boss==='warden'?154:127))vx=sign*(e.boss==='foreman'?123:157);
     }else if(e.mode==='wind'&&e.timer<=0){
-      e.mode='strike';e.timer=e.action==='rush'?.39:.23;
-      if(e.action==='quake'){
-        this.burst(e.x,e.y-4,data.color,25,true);
-        for(const d of [-1,1]) this.shot(e.x+d*39,e.y-12,e.x+d*700,e.y-12,phase?485:391,data.color,12);
-        if(phase)this.shot(e.x+e.dir*33,e.y-66,p.x,p.y-35,348,data.color,8);
+      e.mode='strike';e.timer=e.action==='ram'?.54:.27;
+      if(e.action==='blink'){
+        this.burst(e.x,e.y-37,data.color,16,true);
+        e.x=e.blinkX;e.dir=e.blinkDir;
+        this.burst(e.x,e.y-37,data.color,16,true);
       }
-      if(e.action==='volley'){
-        const ox=e.x+e.dir*24,oy=e.y-52;
-        const a=Math.atan2(p.y-32-oy,p.x-ox);
-        for(const d of phase?[-.36,-.15,.07,.29]:[-.25,0,.25]){
-          this.shot(ox,oy,ox+Math.cos(a+d)*99,oy+Math.sin(a+d)*99,phase?390:321,data.color,8);
+      if(e.action==='replay'&&e.replay==='bow'){
+        for(const lift of phase?[0,-64]:[0]){
+          this.shot(e.x+e.dir*42,e.y-39,e.x+e.dir*200,e.y-39+lift,535,data.color,7);
         }
       }
-      if(e.action==='roots'||e.action==='bloom'||e.action==='echo'){
-        const target=clamp(p.x,106,r.w-106), echo=e.action==='echo', bloom=e.action==='bloom';
-        const pattern=echo?[0,135*e.dir,-135*e.dir]:bloom?[-153,0,153]:[-84,0,84];
-        pattern.forEach((offset,i)=>{
-          if(!phase&&i===2)return;
-          this.threats.push({x:clamp(target+offset,49,r.w-49),w:echo?59:bloom?47:40,
-            h:echo?104:bloom?158:86,delay:.52+i*.10,life:.31,color:data.color});
-        });
-      }
     }else if(e.mode==='strike'){
-      if(e.action==='rush')vx=e.dir*(phase?660:521);
-      if(e.timer<=0){e.mode='rest';e.timer=phase?.62:.82;}
-    }else if(e.mode==='rest'&&e.timer<=0){e.mode='idle';e.timer=phase?.39:.54;}
+      if(e.action==='ram')vx=e.dir*(phase?740:590);
+      if(e.timer<=0||e.action==='ram'&&(e.x<42||e.x>r.w-42)){
+        e.mode='rest';e.timer=e.boss==='warden'?1.12:e.boss==='foreman'?1.02:.82;
+      }
+    }else if(e.mode==='rest'&&e.timer<=0){e.mode='idle';e.timer=phase?.26:.42;}
     walkEnemy(e,vx*dt,dt,r);
     if(overlaps(hitBox(p),hitBox(e)))this.hurt(e.x);
+  }
+  prepareBoss(e,data,p){
+    const delay=e.timer,color=data.color,phase=e.phase;
+    const zone=(kind,x,w,h,offset=0,life=.24,spawn)=>{
+      this.queueThreat({x:clamp(x,w/2,this.room.w-w/2),w,h,delay:delay+offset,life,color,kind,spawn});
+    };
+    switch(e.action){
+      case 'slag':
+        for(const [i,x] of (phase?[p.x-140,p.x,p.x+140]:[p.x,p.x+e.dir*150]).entries()){
+          zone('steam',x,91,124,i*.14,.36);
+        }
+        break;
+      case 'thrust':
+        zone('slash',e.x+e.dir*128,193,56);
+        break;
+      case 'vines':
+        for(const [i,x] of (phase?[p.x,p.x-e.dir*108,p.x+e.dir*126]:[p.x,p.x+e.dir*112]).entries()){
+          zone('roots',x,53,104,i*.18,.31);
+        }
+        break;
+      case 'spores':
+        for(const [i,x] of (phase?[p.x,p.x-175,p.x+175]:[p.x,p.x+e.dir*182]).entries()){
+          zone('cloud',x,133,77,i*.17,phase?1.78:1.37);
+        }
+        break;
+      case 'brood': {
+        const alive=this.enemies.filter(enemy=>enemy.summoned&&enemy.hp).length;
+        const count=Math.min(2-alive,phase?2:1);
+        for(let i=0;i<count;i++)zone('brood',e.x+(i===0?e.dir:-e.dir)*228,62,58,i*.19,.3,'mote');
+        if(count<=0)zone('cloud',p.x,133,77,0,1.25);
+        break;
+      }
+      case 'replay': {
+        e.replay=p.lastMove;
+        if(e.replay==='bow')break;
+        if(e.replay==='hammer')zone('sweep',e.x,270,63,0,.34);
+        else if(e.replay==='dash')zone('echo',e.x+e.dir*201,334,47,0,.28);
+        else {
+          zone('slash',e.x+e.dir*(e.replay==='spear'?125:91),e.replay==='spear'?191:133,64);
+          if(phase&&e.replay==='blade')zone('slash',e.x+e.dir*113,178,61,.30,.24);
+        }
+        break;
+      }
+      case 'blink':
+        e.blinkX=clamp(p.x+e.dir*142,76,this.room.w-76);
+        e.blinkDir=e.blinkX>p.x?-1:1;
+        zone('echo',e.blinkX+e.blinkDir*78,121,65,.14,.24);
+        break;
+    }
   }
   updateProjectiles(dt){
     const inPocket=Boolean(entryPocket(this.room,this.player.x,this.player.y));
@@ -1779,10 +1967,18 @@ class Game {
     }
     for(let i=this.threats.length-1;i>=0;i--){
       const h=this.threats[i];h.delay-=dt;
+      if(h.source&&(!h.source.hp&&h.delay>=-dt||inPocket)){
+        this.threats.splice(i,1);continue;
+      }
       if(h.delay>0)continue;
-      if(h.delay>=-dt)this.burst(h.x,FLOOR-6,h.color,10,true);
+      if(h.delay>=-dt){
+        this.burst(h.x,h.y-6,h.color,10,true);
+        if(h.spawn){
+          const enemy=makeEnemy(h.spawn,h.x,h.y-85,.65);enemy.summoned=true;this.enemies.push(enemy);
+        }
+      }
       h.life-=dt;
-      if(overlaps(hitBox(this.player),{x:h.x-h.w/2,y:FLOOR-h.h,w:h.w,h:h.h}))this.hurt(h.x);
+      if(!h.spawn&&overlaps(hitBox(this.player),{x:h.x-h.w/2,y:h.y-h.h,w:h.w,h:h.h}))this.hurt(h.x);
       if(h.life<=0)this.threats.splice(i,1);
       if(this.mode!=='play')return;
     }
@@ -1799,7 +1995,7 @@ class Game {
       }
       if(first<=1){
         this.bolts.splice(i,1);
-        if(target)this.damageEnemy(target,bolt.atk);
+        if(target)this.damageEnemy(target,bolt.atk,bolt.x);
         else this.burst(bolt.x+dx*first,bolt.y+dy*first,bolt.color,6);
         continue;
       }
@@ -1852,6 +2048,7 @@ const setContent=(n,value)=>{if(n.textContent!==value)n.textContent=value;};
 const button=(label,cls,fn)=>{
   const b=node('button',cls,label);b.type='button';b.addEventListener('click',fn);return b;
 };
+const beaconName=beacon=>beacon.arena?ROOMS[beacon.arena].title+' · 门前':ROOMS[beacon.room].title;
 function renderAtlas(g){
   const c=atlas.getContext('2d');c.fillStyle='#0c161a';c.fillRect(0,0,atlas.width,atlas.height);
   for(let x=12;x<atlas.width;x+=13)for(let y=11;y<atlas.height;y+=13){
@@ -1877,13 +2074,17 @@ function renderAtlas(g){
     c.fillStyle=seen?'#f2ead2':'#a2b3b0';c.textAlign='center';c.textBaseline='middle';
     c.font='12px "Microsoft YaHei UI", sans-serif';c.fillText(seen?r.title:'未探索',x,y+4,93);
     c.fillStyle=t.light;c.fillRect(x-32,y-12,64,2);
-    if(g.state.beacons.has(id))poly(c,'#9bddc9',[[x+42,y-17],[x+46,y-13],[x+42,y-9],[x+38,y-13]]);
+    const beacons=r.items.filter(item=>item.kind==='beacon'&&g.state.beacons.has(item.id));
+    for(const [i,beacon] of beacons.entries()){
+      const bx=x+42-i*11;
+      poly(c,beacon.arena?'#f0c787':'#9bddc9',[[bx,y-17],[bx+4,y-13],[bx,y-9],[bx-4,y-13]]);
+    }
   }
   text('map-status','已探索 '+g.state.visited.size+' / '+mapOrder.length+'　·　界印 '+g.state.seals.size+' / 3');
   const travel=el('travel');travel.replaceChildren();
   if(g.near?.kind==='beacon'){
-    const destinations=[...g.state.beacons].filter(id=>id!==g.id);
-    for(const id of destinations)travel.append(button(ROOMS[id].title,'',()=>g.travel(id)));
+    const destinations=[...g.state.beacons].filter(id=>id!==g.near.id);
+    for(const id of destinations)travel.append(button(beaconName(BEACONS.get(id)),'',()=>g.travel(id)));
   }
 }
 function showControls(g,back){
@@ -1903,7 +2104,7 @@ function drawPanel(g){
     title.textContent='旅程暂停';
     add('继续探索',resume,true);add('操作与设置',()=>showControls(g,'pause'));add('保存并返回主菜单',home);
   }else if(g.mode==='dead'){
-    title.textContent='信号中断';content.append(node('p','','苏醒地点 · '+ROOMS[g.state.checkpoint].title));
+    title.textContent='信号中断';content.append(node('p','','苏醒地点 · '+beaconName(BEACONS.get(g.state.checkpoint))));
     add('在界标苏醒',()=>g.respawn(),true);add('返回主菜单',home);
   }else if(g.mode==='confirm'){
     title.textContent='开启新旅程';content.append(node('p','','新旅程会覆盖当前存档。'));
@@ -1989,7 +2190,7 @@ const UI={
     if(item){
       let label;
       if(item.kind==='portal'||item.kind==='edge')label=g.canPass(item)?'前往'+ROOMS[item.dest].title:g.lockText(item);
-      else label={beacon:'在界标休整',lore:'读取残留记录',ability:'获取'+ABILITIES[item.id]?.name,
+      else label={beacon:item.arena?'在战前界标存档':'在界标休整',lore:'读取残留记录',ability:'获取'+ABILITIES[item.id]?.name,
         weapon:'拾取'+WEAPONS[item.id]?.name,cache:'打开补给箱',shard:'拾取生命残片'}[item.kind];
       const walk=item.kind==='edge'||item.kind==='portal'&&!item.manual;
       setContent(prompt.lastElementChild,label);

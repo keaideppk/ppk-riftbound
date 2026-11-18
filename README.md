@@ -11,10 +11,11 @@ Riftbound is a side-scrolling 2D Metroidvania you can play in your browser. On t
 
 ## Exploration and Combat
 
-- **18 connected rooms and four boss fights.** Follow the main route or climb to upper platforms for supplies, logs, and health shards.
+- **18 connected rooms and four boss fights.** Iron enemies charge or fire in bursts, castle enemies dive or block frontal hits, fungal enemies seed lingering clouds, and Rift shades strike with delayed afterimages.
+- **Distinct boss fights.** Jump the Furnace Foreman's charge, punish the Thorn Warden after a thrust, move out of the Mycelial Core's clouds, and watch the Echo Walker copy your last attack or dash.
 - **Three movement upgrades.** Dash across broken bridges, grapple to anchor rings, and double-jump to distant ledges. Chain two grapples to reach the Thorn Warden's door above Crown Stairway. You can also grapple toward regular enemies to close the gap for a melee attack.
 - **Walk-through passages.** Walk into a passage marked `↔` to enter the next room. Press `E` at gates between worlds. Room arrivals and beacons have safe areas.
-- **Beacons and saves.** Press `E` at a beacon to restore health and set your respawn point. Open the map while near a beacon to fast-travel to one you have activated. Progress is stored in your browser. To resume an online run, use the same browser and site.
+- **Beacons and saves.** Each boss entrance has a beacon that saves your progress and restores health when you enter the arena. A defeat sends you back to that doorway. Press `E` to rest at a beacon, or open the map nearby to travel to an activated beacon. Progress is stored in your browser.
 
 ## Controls
 
